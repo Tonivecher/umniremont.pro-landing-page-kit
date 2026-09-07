@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  databaseHealth,
   countLeadStatuses,
   countStatuses,
   deleteLeadById,
@@ -18,7 +19,8 @@ import {
   updateLeadStatus,
   updateReviewStatus,
 } from "./db.js";
-import { isLeadEmailConfigured, sendLeadNotification, verifyLeadEmailTransport } from "./mail.js";
+import { isLeadEmailConfigured, verifyLeadEmailTransport } from "./mail.js";
+import { startLeadNotifications, wakeLeadNotifications } from "./lead-notifications.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,21 +156,21 @@ export const createApp = () => {
   }));
   app.use(express.json({ limit: "100kb" }));
 
-  app.get("/health", (_req, res) => res.json({ ok: true }));
+  app.get("/health", async (_req, res) => { await databaseHealth(); res.json({ ok: true }); });
 
-  app.get("/api/reviews", (req, res) => {
+  app.get("/api/reviews", async (req, res) => {
     if (req.query.scope === "admin") {
-      return authorizeAdmin(req, res, () => {
+      return authorizeAdmin(req, res, async () => {
         const status = req.query.status;
-        const reviews = listReviews();
+        const reviews = await listReviews();
         return res.json({
           success: true,
           reviews: status ? reviews.filter((review) => review.status === status) : reviews,
-          counts: countStatuses(),
+          counts: await countStatuses(),
         });
       });
     }
-    const reviews = listReviews()
+    const reviews = (await listReviews())
       .filter((review) => review.status === "approved")
       .map(({ id, name, city, text, rating, createdAt, approvedAt }) => ({
         id,
@@ -182,7 +184,7 @@ export const createApp = () => {
     return res.json({ success: true, reviews });
   });
 
-  app.post("/api/reviews/submit", (req, res) => {
+  app.post("/api/reviews/submit", async (req, res) => {
     const payload = req.body;
     if (!payload || typeof payload !== "object") {
       return res.status(400).json({ success: false, error: "Некорректное тело запроса." });
@@ -209,7 +211,7 @@ export const createApp = () => {
       return res.status(400).json({ success: false, error: "Оценка должна быть от 1 до 5." });
     }
     const now = new Date().toISOString();
-    saveReview({
+    await saveReview({
       id: randomUUID(), name, city, text, rating, status: "pending", createdAt: now, updatedAt: now,
       consentVersion: consentVersions.review, consentAt: now,
       publicationConsentVersion: consentVersions.review, publicationConsentAt: now,
@@ -217,22 +219,22 @@ export const createApp = () => {
     return res.status(201).json({ success: true, message: "Спасибо. Отзыв отправлен на модерацию и появится на сайте после проверки." });
   });
 
-  app.post("/api/reviews/moderate", authorizeAdmin, (req, res) => {
+  app.post("/api/reviews/moderate", authorizeAdmin, async (req, res) => {
     const { id, action } = req.body || {};
     if (!id || !action) return res.status(400).json({ success: false, error: "Нужны id отзыва и действие." });
-    if (!getReviewById(id)) return res.status(404).json({ success: false, error: "Отзыв не найден." });
+    if (!await getReviewById(id)) return res.status(404).json({ success: false, error: "Отзыв не найден." });
     if (action === "delete") {
-      deleteReviewById(id);
-      return res.json({ success: true, deleted: true, counts: countStatuses() });
+      await deleteReviewById(id);
+      return res.json({ success: true, deleted: true, counts: await countStatuses() });
     }
     const status = { approve: "approved", reject: "rejected", pending: "pending" }[action];
     if (!status) return res.status(400).json({ success: false, error: "Некорректное действие модерации." });
-    return res.json({ success: true, review: updateReviewStatus(id, status), counts: countStatuses() });
+    return res.json({ success: true, review: await updateReviewStatus(id, status), counts: await countStatuses() });
   });
 
-  app.get("/api/leads", authorizeAdmin, (req, res) => {
+  app.get("/api/leads", authorizeAdmin, async (req, res) => {
     const status = req.query.status === "new" || req.query.status === "handled" ? req.query.status : undefined;
-    res.json({ success: true, leads: listLeads(status), counts: countLeadStatuses() });
+    res.json({ success: true, leads: await listLeads(status), counts: await countLeadStatuses() });
   });
 
   app.post("/api/leads/submit", async (req, res) => {
@@ -264,34 +266,26 @@ export const createApp = () => {
       return res.status(400).json({ success: false, error: "Площадь укажите числом в м²." });
     }
     const now = new Date().toISOString();
-    const lead = saveLead({
+    await saveLead({
       id: randomUUID(), name, phone, propertyType, area, budget, timeline, comment,
       status: "new", createdAt: now, updatedAt: now, consentVersion: consentVersions.lead, consentAt: now,
     });
-    let emailSent = false;
-    if (process.env.LEAD_NOTIFICATIONS_DISABLED !== "1") {
-      try {
-        emailSent = (await sendLeadNotification(lead)).sent;
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        console.error(`Lead ${lead.id} saved, but email delivery failed: ${reason}`);
-      }
-    }
-    return res.status(201).json({ success: true, emailSent, message: "Спасибо! Заявка принята — свяжемся с вами в ближайшее время." });
+    wakeLeadNotifications();
+    return res.status(201).json({ success: true, emailSent: false, emailQueued: process.env.LEAD_NOTIFICATIONS_DISABLED !== "1", message: "Спасибо! Заявка принята — свяжемся с вами в ближайшее время." });
   });
 
-  app.post("/api/leads/update", authorizeAdmin, (req, res) => {
+  app.post("/api/leads/update", authorizeAdmin, async (req, res) => {
     const { id, action } = req.body || {};
     if (!id || !action) return res.status(400).json({ success: false, error: "Нужны id заявки и действие." });
-    if (!getLeadById(id)) return res.status(404).json({ success: false, error: "Заявка не найдена." });
+    if (!await getLeadById(id)) return res.status(404).json({ success: false, error: "Заявка не найдена." });
     if (action === "delete") {
-      deleteLeadById(id);
-      return res.json({ success: true, deleted: true, counts: countLeadStatuses() });
+      await deleteLeadById(id);
+      return res.json({ success: true, deleted: true, counts: await countLeadStatuses() });
     }
     if (action !== "new" && action !== "handled") {
       return res.status(400).json({ success: false, error: "Некорректное действие." });
     }
-    return res.json({ success: true, lead: updateLeadStatus(id, action), counts: countLeadStatuses() });
+    return res.json({ success: true, lead: await updateLeadStatus(id, action), counts: await countLeadStatuses() });
   });
 
   if (process.env.NODE_ENV === "production") {
@@ -341,6 +335,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   const port = Number.parseInt(process.env.PORT || "3001", 10);
   app.listen(port, "0.0.0.0", () => {
     console.log(`Server running on port ${port}`);
+    startLeadNotifications();
     if (process.env.LEAD_NOTIFICATIONS_DISABLED === "1" || !isLeadEmailConfigured) return;
     verifyLeadEmailTransport().catch((error) => {
       const reason = error instanceof Error ? error.message : String(error);
