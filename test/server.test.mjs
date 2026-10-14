@@ -52,6 +52,15 @@ test("public routes, metadata and headers", async () => {
   }
   assert.equal((await fetch(`${baseUrl}/privacy`, { redirect: "manual" })).status, 301);
   assert.equal((await fetch(`${baseUrl}/cookies`, { redirect: "manual" })).status, 301);
+
+  const miniappDirect = await fetch(`${baseUrl}/miniapp`);
+  assert.equal(miniappDirect.status, 200);
+  assert.match(await miniappDirect.text(), /Каталог Петрович/);
+
+  const miniappSlash = await fetch(`${baseUrl}/miniapp/`);
+  assert.equal(miniappSlash.status, 200);
+  assert.match(await miniappSlash.text(), /Каталог Петрович/);
+
   const missing = await fetch(`${baseUrl}/missing-page`);
   assert.equal(missing.status, 404);
   assert.match(await missing.text(), /noindex,follow/);

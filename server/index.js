@@ -297,6 +297,10 @@ export const createApp = () => {
   if (process.env.NODE_ENV === "production") {
     const distDir = path.join(__dirname, "../dist");
     const indexHtml = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
+    app.use("/miniapp", express.static(path.join(distDir, "miniapp")));
+    app.get(["/miniapp", "/miniapp/"], (_req, res) => {
+      res.sendFile(path.join(distDir, "miniapp/index.html"));
+    });
     app.use(express.static(distDir, { index: false }));
     app.get("/privacy", (_req, res) => res.redirect(301, "/privacy-policy/"));
     app.get("/cookies", (_req, res) => res.redirect(301, "/cookie-policy/"));
