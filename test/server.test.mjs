@@ -56,10 +56,14 @@ test("public routes, metadata and headers", async () => {
   const miniappDirect = await fetch(`${baseUrl}/miniapp`);
   assert.equal(miniappDirect.status, 200);
   assert.match(await miniappDirect.text(), /Каталог Петрович/);
+  assert.match(miniappDirect.headers.get("content-security-policy") || "", /frame-ancestors https:\/\/web\.telegram\.org/);
+  assert.equal(miniappDirect.headers.get("x-frame-options"), null);
 
   const miniappSlash = await fetch(`${baseUrl}/miniapp/`);
   assert.equal(miniappSlash.status, 200);
   assert.match(await miniappSlash.text(), /Каталог Петрович/);
+  assert.match(miniappSlash.headers.get("content-security-policy") || "", /frame-ancestors https:\/\/web\.telegram\.org/);
+  assert.equal(miniappSlash.headers.get("x-frame-options"), null);
 
   const missing = await fetch(`${baseUrl}/missing-page`);
   assert.equal(missing.status, 404);

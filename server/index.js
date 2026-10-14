@@ -76,15 +76,25 @@ const createRateLimiter = ({ limit, windowMs }) => {
 const leadRateLimited = createRateLimiter({ limit: 5, windowMs: 10 * 60 * 1000 });
 const reviewRateLimited = createRateLimiter({ limit: 5, windowMs: 10 * 60 * 1000 });
 
-const securityHeaders = (_req, res, next) => {
+const securityHeaders = (req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
-  res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; upgrade-insecure-requests",
-  );
+
+  const isMiniapp = req.path.startsWith("/miniapp");
+  if (isMiniapp) {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'; form-action 'self'; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://*.telegram.org https://cdn.tailwindcss.com https://unpkg.com; connect-src 'self' https: blob:; object-src 'none'; upgrade-insecure-requests",
+    );
+  } else {
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; upgrade-insecure-requests",
+    );
+  }
+
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   }
