@@ -1,13 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Star } from 'lucide-react';
-import Marquee from 'react-fast-marquee';
-import { ReviewForm } from './ReviewForm';
-import { ReviewModerationPanel } from './ReviewModerationPanel';
-import { formatReviewDate, isReviewsAdminMode, PublicReview } from '@/src/utils/reviews';
-
-gsap.registerPlugin(ScrollTrigger);
+import React, { useEffect, useMemo, useState } from "react";
+import { Star } from "lucide-react";
+import { ReviewForm } from "./ReviewForm";
+import { ReviewModerationPanel } from "./ReviewModerationPanel";
+import { formatReviewDate, isReviewsAdminMode, PublicReview } from "@/utils/reviews";
 
 type DisplayTestimonial = {
   id: string;
@@ -19,31 +14,33 @@ type DisplayTestimonial = {
 
 const staticTestimonials: DisplayTestimonial[] = [
   {
-    id: 'static-alexander-volkov',
-    quote: 'Уровень детализации и приверженность первоначальному архитектурному видению превзошли наши ожидания. По-настоящему премиальный опыт.',
-    author: 'Александр Волков',
-    meta: 'Частный клиент',
+    id: "static-alexander-volkov",
+    quote:
+      "Уровень детализации и приверженность первоначальному архитектурному видению превзошли наши ожидания. По-настоящему премиальный опыт.",
+    author: "Александр Волков",
+    meta: "Частный клиент",
     rating: 5,
   },
   {
-    id: 'static-elena-petrova',
-    quote: 'Работа с «Умным Ремонтом» — это спокойствие. Они понимают язык роскоши и важность точности.',
-    author: 'Елена Петрова',
-    meta: 'Архитектурный дизайнер',
+    id: "static-elena-petrova",
+    quote:
+      "Работа с «Умным Ремонтом» — это спокойствие. Они понимают язык роскоши и важность точности.",
+    author: "Елена Петрова",
+    meta: "Архитектурный дизайнер",
     rating: 5,
   },
 ];
 
 const TestimonialCard: React.FC<{ testimonial: DisplayTestimonial }> = ({ testimonial }) => (
-  <article className="testimonial-card mx-4 flex h-full w-[min(30rem,calc(100vw-4.5rem))] flex-col justify-between rounded-[1.75rem] border border-white/10 bg-white/[0.05] p-8 md:mx-5 md:w-[34rem] md:p-10 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+  <article className="testimonial-card flex h-full flex-col justify-between rounded-[1.75rem] border border-white/10 bg-[#151515] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10">
     <div>
       <div className="mb-6 flex gap-1">
         {[...Array(5)].map((_, index) => (
           <Star
             key={index}
             size={14}
-            fill={index < testimonial.rating ? 'currentColor' : 'none'}
-            className={index < testimonial.rating ? 'text-brand-accent' : 'text-white/10'}
+            fill={index < testimonial.rating ? "currentColor" : "none"}
+            className={index < testimonial.rating ? "text-brand-accent" : "text-white/10"}
           />
         ))}
       </div>
@@ -55,21 +52,22 @@ const TestimonialCard: React.FC<{ testimonial: DisplayTestimonial }> = ({ testim
 
     <div className="mt-10 border-t border-white/8 pt-6">
       <span className="block text-sm font-medium tracking-wide">{testimonial.author}</span>
-      <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] opacity-40">{testimonial.meta}</span>
+      <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] opacity-60">
+        {testimonial.meta}
+      </span>
     </div>
   </article>
 );
 
 export const Testimonials: React.FC = () => {
-  const sectionRef = useRef<HTMLElement>(null);
   const [approvedReviews, setApprovedReviews] = useState<PublicReview[]>([]);
   const [adminMode, setAdminMode] = useState(false);
 
   const loadReviews = async () => {
     try {
-      const response = await fetch('/api/reviews');
+      const response = await fetch("/api/reviews");
       if (!response.ok) {
-        throw new Error('Failed to load reviews');
+        throw new Error("Failed to load reviews");
       }
 
       const payload = await response.json();
@@ -90,72 +88,31 @@ export const Testimonials: React.FC = () => {
         id: review.id,
         quote: review.text,
         author: review.name,
-        meta: `${review.city || 'Без города'} • ${formatReviewDate(review.approvedAt || review.createdAt)}`,
+        meta: `${review.city || "Без города"} • ${formatReviewDate(review.approvedAt || review.createdAt)}`,
         rating: review.rating,
       })),
       ...staticTestimonials,
     ],
-    [approvedReviews]
+    [approvedReviews],
   );
 
-  const marqueeRows = useMemo(() => {
-    const primary = testimonials.filter((_, index) => index % 2 === 0);
-    const secondary = testimonials.filter((_, index) => index % 2 !== 0);
-
-    return [
-      primary.length ? primary : testimonials,
-      secondary.length ? secondary : testimonials,
-    ];
-  }, [testimonials]);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const rows = gsap.utils.toArray<HTMLElement>('[data-testimonials-marquee]');
-      if (!rows.length) return;
-
-      gsap.from(rows, {
-        y: 40,
-        opacity: 0,
-        duration: 1.2,
-        stagger: 0.14,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top 80%',
-        },
-      });
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, [approvedReviews.length]);
-
   return (
-    <section ref={sectionRef} id="testimonials" className="py-32 md:py-64 px-8 md:px-24 bg-brand-dark">
+    <section
+      id="testimonials"
+      className="py-32 md:py-64 px-8 md:px-24 bg-brand-dark"
+    >
       <div className="mb-24">
-        <span className="text-[10px] uppercase tracking-[0.3em] mb-4 block opacity-40">Голоса</span>
-        <h2 data-split-heading className="text-5xl md:text-7xl font-display">Отзывы</h2>
+        <span className="mb-4 block text-[10px] uppercase tracking-[0.3em] opacity-60">Голоса</span>
+        <h2 data-split-heading className="text-5xl md:text-7xl font-display">
+          Отзывы
+        </h2>
       </div>
 
       {adminMode ? <ReviewModerationPanel onReviewsUpdated={loadReviews} /> : null}
 
-      <div className="mb-32 space-y-5 overflow-hidden">
-        {marqueeRows.map((row, index) => (
-          <div key={`row-${index}`} data-testimonials-marquee className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-brand-dark to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-brand-dark to-transparent" />
-
-            <Marquee
-              autoFill
-              pauseOnHover
-              gradient={false}
-              speed={index === 0 ? 26 : 22}
-              direction={index === 0 ? 'left' : 'right'}
-            >
-              {row.map((testimonial) => (
-                <TestimonialCard key={`${index}-${testimonial.id}`} testimonial={testimonial} />
-              ))}
-            </Marquee>
-          </div>
+      <div className="mb-32 grid gap-5 lg:grid-cols-2">
+        {testimonials.map((testimonial) => (
+          <TestimonialCard key={testimonial.id} testimonial={testimonial} />
         ))}
       </div>
 
