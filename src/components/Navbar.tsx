@@ -57,10 +57,10 @@ export const Navbar: React.FC = () => {
       }
       if (!isOpen || event.key !== "Tab") return;
 
-      const overlayLinks = Array.from(
-        menuOverlayRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [],
-      );
-      const focusable = overlayLinks.filter((element) => element.offsetParent !== null);
+      const overlayLinks: HTMLElement[] = menuOverlayRef.current
+        ? Array.from(menuOverlayRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
+        : [];
+      const focusable = overlayLinks.filter((element: HTMLElement) => element.offsetParent !== null);
       if (!focusable.length) return;
 
       const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
