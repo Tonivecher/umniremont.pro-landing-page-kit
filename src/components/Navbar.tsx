@@ -46,9 +46,9 @@ export const Navbar: React.FC = () => {
 
         <a href="#" className="relative block shrink-0" onClick={closeMenu}>
           <img
-            src="/brand/umniremont-logo-white.svg"
+            src="/brand/umniremont-logo-gold.svg"
             alt="Умный Ремонт"
-            className="h-8 w-auto origin-left scale-[1.45] transform-gpu md:h-12 md:scale-[1.35]"
+            className="h-9 w-auto md:h-12 transition-transform hover:scale-[1.02]"
           />
         </a>
 

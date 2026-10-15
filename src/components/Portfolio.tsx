@@ -1,9 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ArrowUpRight, Image as ImageIcon } from 'lucide-react';
 import { MagneticButton } from './MagneticButton';
-
-gsap.registerPlugin(ScrollTrigger);
 
 type ProjectImage = {
   src: string;
@@ -51,7 +49,7 @@ const projects: Project[] = [
   {
     id: 'tower-residence',
     title: 'Башенная резиденция',
-    category: 'Квартира',
+    category: 'Резиденция',
     stage: 'Реализация',
     description:
       'Панорамные спальни, глубокий камень в санузле и теплый рисунок пола собраны в цельный интерьер без визуального шума.',
@@ -160,68 +158,46 @@ const projects: Project[] = [
 ];
 
 export const Portfolio: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [expandedId, setExpandedId] = useState<string | null>('modern-interior');
+  const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Fade up effect for each portfolio block
-      const items = gsap.utils.toArray<HTMLElement>('.portfolio-item');
-      items.forEach((item) => {
-        gsap.from(item, {
-          y: 80,
-          opacity: 0,
-          duration: 1.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 85%',
-          },
-        });
-      });
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
-      // Smooth parallax for main images
-      const parallaxImages = gsap.utils.toArray<HTMLElement>('.image-parallax');
-      parallaxImages.forEach((img) => {
-        gsap.to(img, {
-          yPercent: 15,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: img.parentElement,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: true,
-          },
-        });
-      });
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
+  const handleSelectImage = (projectId: string, index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImageIndices((prev) => ({ ...prev, [projectId]: index }));
+  };
 
   return (
-    <section id="portfolio" className="bg-brand-dark px-6 py-24 md:px-12 xl:px-24 md:py-40">
-      <div className="mb-20 flex flex-col gap-10 md:mb-32 md:flex-row md:items-end md:justify-between">
+    <section id="portfolio" className="relative bg-brand-dark px-5 py-24 sm:px-8 md:px-12 xl:px-20 md:py-36">
+      {/* Заголовок секции */}
+      <div className="mx-auto max-w-7xl mb-12 md:mb-16 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <span className="mb-6 block text-[10px] uppercase tracking-[0.3em] opacity-40">
-            Избранные работы
+          <span className="mb-4 inline-block rounded-full bg-white/[0.05] border border-white/10 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+            Реализованные объекты
           </span>
-          <h2 data-split-heading className="text-5xl font-display md:text-7xl lg:text-[6rem] leading-[0.9]">
+          <h2 data-split-heading className="text-4xl md:text-6xl font-display text-white tracking-tight leading-tight">
             Портфолио
           </h2>
+          <p className="mt-3 text-sm md:text-base text-white/60 leading-relaxed max-w-xl">
+            Компактный обзор объектов. Нажмите на карточку, чтобы посмотреть фотографии всех зон и планировочные решения.
+          </p>
         </div>
 
-        <div className="flex flex-col items-start gap-6 md:items-end">
-          <div className="hidden text-[10px] uppercase tracking-[0.2em] opacity-40 md:block">
-            {`Показано 01 — ${String(projects.length).padStart(2, '0')}`}
+        <div className="flex items-center gap-4">
+          <div className="hidden rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-white/50 md:block">
+            {`01 — ${String(projects.length).padStart(2, '0')} ОБЪЕКТОВ`}
           </div>
 
           <MagneticButton>
             <a
               href="#contact"
-              className="premium-action group relative inline-flex w-full items-center justify-center overflow-hidden border border-white/20 px-8 py-5 text-[10px] uppercase text-white hover:border-white/40 sm:w-auto sm:px-10 sm:text-[11px]"
+              className="group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-white/20 px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition-all hover:border-white/50 hover:bg-white/[0.06] sm:px-9"
               aria-label="Перейти к контактам для обсуждения проекта"
             >
-              <span className="mobile-action-text relative z-10 transition-colors duration-500 group-hover:text-brand-dark md:tracking-[0.25em]">
+              <span className="relative z-10 transition-colors duration-500 group-hover:text-brand-dark">
                 Обсудить проект
               </span>
               <div className="absolute inset-0 translate-y-full bg-white transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0" />
@@ -230,76 +206,156 @@ export const Portfolio: React.FC = () => {
         </div>
       </div>
 
-      <div ref={containerRef} className="flex flex-col gap-32 md:gap-48 lg:gap-64 pb-20">
-        {projects.map((project, index) => {
-          const isEven = index % 2 === 0;
-          const mainImg = project.gallery[0];
-          const secondaryImgs = project.gallery.slice(1, 3);
+      {/* Компактная мягкая сетка карточек в стиле сайта */}
+      <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 sm:gap-8 items-start">
+        {projects.map((project) => {
+          const isExpanded = expandedId === project.id;
+          const activeIndex = activeImageIndices[project.id] ?? 0;
+          const currentImg = project.gallery[activeIndex] || project.gallery[0];
 
           return (
             <article
               key={project.id}
-              className="portfolio-item group relative w-full"
+              className={`group relative flex flex-col overflow-hidden rounded-[28px] border bg-[#141416]/90 backdrop-blur-sm transition-all duration-300 ${
+                isExpanded
+                  ? 'border-white/25 shadow-[0_20px_50px_rgba(0,0,0,0.65)]'
+                  : 'border-white/10 hover:border-white/20 hover:bg-[#18181b]/90'
+              }`}
             >
-              <div className={`flex flex-col gap-10 md:gap-16 lg:gap-32 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} items-center`}>
-                
-                {/* Main Image Container */}
-                <div className="w-full md:w-7/12 lg:w-2/3">
-                  <div className="relative aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-sm bg-[#111]">
-                    <img
-                      src={mainImg.src}
-                      alt={mainImg.alt}
-                      className="image-parallax absolute top-[-10%] left-0 w-full h-[120%] object-cover opacity-90 transition-opacity duration-700 group-hover:opacity-100"
-                      loading="lazy"
-                    />
-                  </div>
+              {/* Верхняя компактная медиа-зона с мягким радиусом 4:3 */}
+              <div
+                className="relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-t-[26px] bg-[#0d0d0f]"
+                onClick={() => toggleExpand(project.id)}
+              >
+                <img
+                  src={currentImg.src}
+                  alt={currentImg.alt}
+                  className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-103"
+                  loading="lazy"
+                />
+
+                {/* Верхние мягкие капсульные бейджи */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/65 via-black/25 to-transparent">
+                  <span className="rounded-full bg-black/60 px-3.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/90 backdrop-blur-md border border-white/10">
+                    {project.category}
+                  </span>
+                  <span className="rounded-full bg-black/60 px-3 py-1 font-mono text-[10px] text-white/80 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
+                    <ImageIcon className="h-3 w-3 text-white/70" />
+                    <span>{project.gallery.length} фото</span>
+                  </span>
                 </div>
 
-                {/* Content & Secondary Images */}
-                <div className="w-full md:w-5/12 lg:w-1/3 flex flex-col justify-center">
-                  <div className="mb-10">
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-white/40 block mb-4">
-                      {project.category} &bull; {project.stage}
-                    </span>
-                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-display leading-tight mb-5 text-white/90">
-                      {project.title}
-                    </h3>
-                    <p className="text-white/50 text-sm md:text-base leading-relaxed mb-8 max-w-sm">
-                      {project.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {project.highlights.map((highlight) => (
+                {/* Подпись к текущему ракурсу */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 via-black/35 to-transparent">
+                  <span className="inline-block rounded-full bg-black/50 px-3 py-1 text-xs text-white/90 backdrop-blur-sm border border-white/10">
+                    {currentImg.caption}
+                  </span>
+                </div>
+              </div>
+
+              {/* Тело карточки */}
+              <div className="p-6 flex flex-col justify-between flex-1">
+                <div>
+                  <h3
+                    className="font-display text-2xl text-white cursor-pointer transition-colors hover:text-white/85"
+                    onClick={() => toggleExpand(project.id)}
+                  >
+                    {project.title}
+                  </h3>
+                  <p className="mt-2 text-xs leading-relaxed text-white/55 line-clamp-2">
+                    {project.description}
+                  </p>
+                </div>
+
+                {/* Кнопка раскрытия — мягкая капсула в тон кнопки хедера */}
+                <button
+                  type="button"
+                  onClick={() => toggleExpand(project.id)}
+                  className={`mt-5 flex w-full items-center justify-between rounded-full border px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] transition-all ${
+                    isExpanded
+                      ? 'border-white/30 bg-white/10 text-white'
+                      : 'border-white/15 bg-white/[0.04] text-white/80 hover:border-white/35 hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  <span>{isExpanded ? 'Свернуть галерею' : `Смотреть проект (${project.gallery.length} зоны)`}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-white/70 transition-transform duration-300 ${
+                      isExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Раскрывающийся по клику блок (In-Place Expand) */}
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden border-t border-white/10 bg-black/30 px-6 pb-6 pt-5"
+                  >
+                    {/* Переключатель зон/комнат */}
+                    <div className="mb-4">
+                      <div className="mb-2.5 flex items-center justify-between">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60">
+                          Выберите зону:
+                        </span>
+                        <span className="font-mono text-[10px] text-white/40">
+                          {activeIndex + 1} из {project.gallery.length}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {project.gallery.map((img, idx) => (
+                          <button
+                            key={img.src}
+                            type="button"
+                            onClick={(e) => handleSelectImage(project.id, idx, e)}
+                            className={`group/thumb relative aspect-[4/3] overflow-hidden rounded-2xl border transition-all ${
+                              activeIndex === idx
+                                ? 'border-white/60 ring-2 ring-white/20 scale-[1.02]'
+                                : 'border-white/10 opacity-55 hover:opacity-100 hover:border-white/30'
+                            }`}
+                            title={img.caption}
+                          >
+                            <img
+                              src={img.src}
+                              alt={img.alt}
+                              className="h-full w-full object-cover"
+                            />
+                            <span className="absolute inset-x-0 bottom-0 bg-black/85 px-1 py-0.5 text-center font-mono text-[8px] text-white truncate">
+                              {img.caption.replace(/^(Зона\s|Главная\s|Небольшая\s)/i, '')}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Теги материалов — круглые капсулы */}
+                    <div className="mb-5 flex flex-wrap gap-2">
+                      {project.highlights.map((tag) => (
                         <span
-                          key={highlight}
-                          className="px-4 py-2 border border-white/10 rounded-full text-[9px] uppercase tracking-[0.2em] text-white/50 bg-white/[0.02]"
+                          key={tag}
+                          className="rounded-full bg-white/[0.05] px-3.5 py-1.5 text-[9px] uppercase tracking-[0.14em] text-white/60 border border-white/10"
                         >
-                          {highlight}
+                          {tag}
                         </span>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Secondary Imagery */}
-                  {secondaryImgs.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 md:gap-6 mt-4">
-                      {secondaryImgs.map((img) => (
-                        <figure
-                          key={img.src}
-                          className="relative aspect-[4/5] overflow-hidden rounded-sm bg-[#111]"
-                        >
-                          <img
-                            src={img.src}
-                            alt={img.alt}
-                            className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-90 hover:!opacity-100 grayscale-[20%] hover:grayscale-0"
-                            loading="lazy"
-                          />
-                        </figure>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-              </div>
+                    {/* Целевое действие — мягкая капсула */}
+                    <a
+                      href="#contact"
+                      className="group/cta flex items-center justify-center gap-2 rounded-full bg-white/10 border border-white/20 px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition-all hover:bg-white hover:text-brand-dark"
+                    >
+                      <span>Обсудить похожий ремонт</span>
+                      <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5" />
+                    </a>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </article>
           );
         })}

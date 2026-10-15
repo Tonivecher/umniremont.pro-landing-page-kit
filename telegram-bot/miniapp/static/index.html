@@ -1,303 +1,1750 @@
-<!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Умный расчёт ремонта</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-    <link rel="icon" type="image/svg+xml" href="/miniapp/static/brand/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/miniapp/static/brand/favicon-32.png" />
-    <link rel="stylesheet" href="/miniapp/static/styles.css?v=6" />
-  </head>
-  <body>
-    <div class="film-grain" aria-hidden="true"></div>
-    <main class="layout site-shell">
-      <header class="hero reveal">
-        <nav class="mini-nav" aria-label="Навигация mini app">
-          <a class="brand-mark" href="#" aria-label="Умный Ремонт">
-            <img class="brand-logo" src="/miniapp/static/assets/umniremont-logo-white.svg" alt="Умный Ремонт" />
-          </a>
-          <div class="nav-pill">Telegram Mini App</div>
-        </nav>
-
-        <div class="hero-copy">
-          <p class="eyebrow">Команда «Умный Ремонт»</p>
-          <h1>Предварительный расчёт ремонта — спокойно и по делу</h1>
-          <p class="subtitle">Заполните объект и комнаты. Мы покажем ориентир по работам, материалам и тарифам — без строительного тумана и «потом разберёмся».</p>
-        </div>
-
-        <div class="hero-cta-row">
-          <a class="btn primary hero-link" href="#objectStep">Начать расчёт</a>
-          <a class="btn ghost hero-link" href="#resultCard">К результату</a>
-        </div>
-
-        <div class="hero-metrics" aria-label="Что считает mini app">
-          <article><strong>01</strong><span>Комнаты и площадь</span></article>
-          <article><strong>02</strong><span>Материалы</span></article>
-          <article><strong>03</strong><span>Работы и тарифы</span></article>
-        </div>
-
-        <div id="statusLine" class="status-line">Загрузка сессии…</div>
-      </header>
-
-      <section id="openInTelegramHint" class="card warning hidden reveal">
-        <h2>Откройте Mini App через Telegram</h2>
-        <p class="helper">Сейчас страница открыта без Telegram-авторизации. Доступен только локальный черновик — без серверного сохранения и расчёта.</p>
-      </section>
-
-      <section class="card reveal cabinet-card">
-        <div class="cabinet-head">
-          <div id="cabinetAvatar" class="avatar">
-            <img id="cabinetAvatarImage" class="avatar-image hidden" alt="avatar" />
-            <span id="cabinetAvatarText">УР</span>
-          </div>
-          <div>
-            <p class="eyebrow compact">Ваш проект</p>
-            <h2 id="profileName">Расчёт ремонта</h2>
-            <p id="profileHandle" class="muted">Откройте через Telegram, чтобы сохранить черновик</p>
-          </div>
-        </div>
-        <div class="stats-grid">
-          <article class="stat-item">
-            <p class="label">Профиль ID</p>
-            <p id="profileId" class="value">-</p>
-          </article>
-          <article class="stat-item">
-            <p class="label">Комнат</p>
-            <p id="profileRooms" class="value">0</p>
-          </article>
-          <article class="stat-item">
-            <p class="label">Сохранение</p>
-            <p id="profileLastSaved" class="value">-</p>
-          </article>
-          <article class="stat-item">
-            <p class="label">Статус</p>
-            <p id="profileStatus" class="value">Черновик</p>
-          </article>
-        </div>
-
-        <label class="field tier-field">
-          <span>Предпочтительный уровень ремонта</span>
-          <div id="favoriteTierChips" class="chips tier-chips">
-            <button class="chip active" data-tier="standard" type="button">Standard</button>
-            <button class="chip" data-tier="econom" type="button">Econom</button>
-            <button class="chip" data-tier="premium" type="button">Premium</button>
-          </div>
-        </label>
-
-        <div class="progress-wrap">
-          <div class="progress-head">
-            <span>Прогресс заполнения</span>
-            <strong id="profileProgressText">0%</strong>
-          </div>
-          <div class="progress-track">
-            <div id="profileProgressBar" class="progress-bar"></div>
-          </div>
-        </div>
-
-        <div class="row-actions">
-          <button id="resetSessionBtn" class="btn danger" type="button">Сбросить</button>
-        </div>
-      </section>
-
-      <section id="objectStep" class="card reveal form-card">
-        <div class="section-kicker">Шаг 1</div>
-        <h2>Объект</h2>
-        <p class="helper">Начнём с базы: город и высота потолка влияют на расчёт материалов и работ.</p>
-        <div class="grid two">
-          <label class="field">
-            <span>Город / регион</span>
-            <input id="cityInput" type="text" placeholder="Москва" />
-          </label>
-          <label class="field">
-            <span>Высота потолка, м</span>
-            <input id="ceilingInput" type="number" min="2" max="5" step="0.1" placeholder="2.7" />
-          </label>
-        </div>
-      </section>
-
-      <section class="card reveal form-card">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">Шаг 2</div>
-            <h2>Комнаты</h2>
-          </div>
-          <button id="addRoomBtn" class="btn ghost" type="button">+ Добавить</button>
-        </div>
-        <p class="helper">Добавьте комнаты по очереди. Можно начать с пресета, а потом уточнить геометрию, отделку и точки.</p>
-        <div id="roomsList" class="rooms-list"></div>
-      </section>
-
-      <section id="editorCard" class="card reveal hidden form-card editor-card">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">Форма комнаты</div>
-            <h2 id="editorTitle">Новая комната</h2>
-          </div>
-          <button id="closeEditorBtn" class="btn subtle" type="button">Закрыть</button>
-        </div>
-
-        <div id="editorStepTabs" class="editor-tabs">
-          <button class="editor-tab active" data-editor-step="base" type="button">База</button>
-          <button class="editor-tab" data-editor-step="geometry" type="button">Геометрия</button>
-          <button class="editor-tab" data-editor-step="finishes" type="button">Отделка</button>
-          <button class="editor-tab" data-editor-step="points" type="button">Точки</button>
-        </div>
-
-        <section class="editor-pane" data-editor-pane="base">
-          <label class="field">
-            <span>Быстрый пресет</span>
-            <div id="roomPresetChips" class="chips">
-              <button class="chip" data-preset="kitchen" type="button">Кухня</button>
-              <button class="chip" data-preset="bathroom" type="button">Санузел</button>
-              <button class="chip" data-preset="bedroom" type="button">Спальня</button>
-              <button class="chip" data-preset="living_room" type="button">Гостиная</button>
-            </div>
-          </label>
-
-          <div class="grid two">
-            <label class="field">
-              <span>Название</span>
-              <input id="roomName" type="text" placeholder="Кухня" />
-            </label>
-            <label class="field">
-              <span>Тип комнаты</span>
-              <select id="roomType">
-                <option value="kitchen">Кухня</option>
-                <option value="bathroom">Санузел</option>
-                <option value="bedroom">Спальня</option>
-                <option value="living_room">Гостиная</option>
-                <option value="hallway">Коридор</option>
-                <option value="other">Другое</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Площадь пола, м²</span>
-              <input id="roomArea" type="number" min="0.1" step="0.1" placeholder="18" />
-            </label>
-            <label class="field">
-              <span>Высота комнаты, м</span>
-              <input id="roomHeight" type="number" min="2" max="5" step="0.1" placeholder="использовать общую" />
-            </label>
-          </div>
-        </section>
-
-        <section class="editor-pane hidden" data-editor-pane="geometry">
-          <label class="field">
-            <span>Геометрия стен</span>
-            <div class="chips" id="geometryMode">
-              <button class="chip active" data-mode="auto" type="button">Допущение</button>
-              <button class="chip" data-mode="perimeter" type="button">Периметр</button>
-              <button class="chip" data-mode="dimensions" type="button">Длина × ширина</button>
-            </div>
-          </label>
-
-          <div class="grid two" id="geometryInputs">
-            <label class="field hidden" data-for="perimeter">
-              <span>Периметр, м</span>
-              <input id="roomPerimeter" type="number" min="1" step="0.1" placeholder="17.2" />
-            </label>
-            <label class="field hidden" data-for="dimensions">
-              <span>Длина, м</span>
-              <input id="roomLength" type="number" min="1" step="0.1" placeholder="4.5" />
-            </label>
-            <label class="field hidden" data-for="dimensions">
-              <span>Ширина, м</span>
-              <input id="roomWidth" type="number" min="1" step="0.1" placeholder="3.2" />
-            </label>
-          </div>
-        </section>
-
-        <section class="editor-pane hidden" data-editor-pane="finishes">
-          <div class="toggle-grid">
-            <label class="toggle"><input id="wallsPlaster" type="checkbox" checked /> <span>Стены: штукатурка</span></label>
-            <label class="toggle"><input id="wallsPutty" type="checkbox" checked /> <span>Стены: шпаклёвка</span></label>
-            <label class="toggle"><input id="wallsPaint" type="checkbox" checked /> <span>Стены: покраска</span></label>
-            <label class="toggle"><input id="wallsTiles" type="checkbox" /> <span>Стены: плитка</span></label>
-            <label class="toggle"><input id="floorScreed" type="checkbox" checked /> <span>Пол: стяжка</span></label>
-            <label class="toggle"><input id="floorTiles" type="checkbox" /> <span>Пол: плитка</span></label>
-            <label class="toggle"><input id="floorLaminate" type="checkbox" /> <span>Пол: ламинат</span></label>
-          </div>
-        </section>
-
-        <section class="editor-pane hidden" data-editor-pane="points">
-          <div class="grid two">
-            <label class="field">
-              <span>Электроточки, шт</span>
-              <input id="electricalPoints" type="number" min="0" step="1" placeholder="12" />
-            </label>
-            <label class="field">
-              <span>Сантехточки, шт</span>
-              <input id="plumbingPoints" type="number" min="0" step="1" placeholder="5" />
-            </label>
-          </div>
-        </section>
-
-        <div class="row-actions editor-actions">
-          <button id="prevEditorStepBtn" class="btn subtle" type="button">Назад</button>
-          <button id="nextEditorStepBtn" class="btn ghost" type="button">Далее</button>
-          <button id="saveRoomBtn" class="btn primary" type="button">Сохранить комнату</button>
-        </div>
-      </section>
-
-      <section id="resultCard" class="card reveal hidden result-card">
-        <div class="section-kicker">Шаг 3</div>
-        <h2>Результат</h2>
-        <div id="laborCards" class="labor-cards"></div>
-
-        <h3>Сценарии бюджета</h3>
-        <div id="scenarioCards" class="labor-cards scenario-cards"></div>
-
-        <h3>Материалы</h3>
-        <div id="materialsList" class="materials-list"></div>
-
-        <h3>Допущения</h3>
-        <ul id="assumptionsList" class="assumptions"></ul>
-
-        <div class="lead-card">
-          <div>
-            <p class="eyebrow compact">Следующий шаг</p>
-            <h3>Получить точный расчёт от специалиста</h3>
-            <p class="helper">Мини‑расчёт даёт ориентир. Мастер «Умного Ремонта» проверит вводные, подскажет по материалам и поможет собрать понятную смету.</p>
-          </div>
-          <button id="sendLeadBtn" class="btn primary" type="button">Отправить заявку</button>
-        </div>
-
-        <div class="row-actions">
-          <button id="copyReportBtn" class="btn ghost" type="button">Копировать отчёт</button>
-          <button id="downloadJsonBtn" class="btn subtle" type="button">Скачать JSON</button>
-        </div>
-      </section>
-    </main>
-
-    <footer class="action-dock">
-      <button id="saveSessionBtn" class="btn ghost" type="button">Сохранить</button>
-      <button id="calculateBtn" class="btn primary" type="button">Рассчитать ремонт</button>
-    </footer>
-
-    <div id="toastContainer" class="toast-container"></div>
-
-    <div id="customConfirmModal" class="confirm-modal-overlay hidden">
-      <div class="confirm-modal-card">
-        <h2 id="confirmTitle" class="confirm-title">Подтверждение</h2>
-        <p id="confirmMessage" class="confirm-message">Вы уверены?</p>
-        <div class="confirm-modal-actions">
-          <button id="confirmCancelBtn" class="btn ghost" type="button">Отмена</button>
-          <button id="confirmOkBtn" class="btn primary" type="button">Подтвердить</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="spinnerOverlay" class="spinner-overlay hidden">
-      <div class="spinner-container">
-        <div class="spinner-ring"></div>
-        <p id="spinnerMessage" class="spinner-message">Формируем предварительный расчёт...</p>
-      </div>
-    </div>
-
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Умный Ремонт — Сметный Ассистент & Каталог Петрович</title>
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="/miniapp/static/app.js?v=5"></script>
-  </body>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        graphite: {
+                            950: '#0d0d0c',
+                            900: '#171715',
+                            800: '#22221f',
+                            700: '#2e2e2a',
+                            600: '#42423d'
+                        },
+                        champagne: {
+                            DEFAULT: '#c5a880',
+                            light: '#dfd1b8',
+                            gold: '#d4af37',
+                            dark: '#9e8159'
+                        },
+                        limebadge: {
+                            DEFAULT: '#b4f547',
+                            muted: 'rgba(180, 245, 71, 0.14)'
+                        },
+                        petrovich: {
+                            DEFAULT: '#ffcc00',
+                            red: '#e30613'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg-primary: #0d0d0c;
+            --bg-card: #171715;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --accent-gold: #c5a880;
+            --accent-gold-bright: #d4af37;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: #f4f4f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .ur-card {
+            background-color: #171715;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            transition: border-color 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
+        }
+
+        .ur-card-interactive:active {
+            transform: scale(0.99);
+        }
+
+        .ur-border {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #d4af37 0%, #c5a880 55%, #a9895f 100%);
+        }
+
+        .gold-glow {
+            box-shadow: 0 8px 28px -6px rgba(197, 168, 128, 0.35);
+        }
+
+        /* Custom Range Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 999px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #c5a880;
+            border: 3px solid #0d0d0c;
+            box-shadow: 0 0 0 1px rgba(197, 168, 128, 0.5), 0 3px 8px rgba(0,0,0,0.6);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+            background: #d4af37;
+        }
+
+        /* Hide spin buttons in numeric inputs */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Smooth Screen Transition */
+        .screen-view {
+            animation: fadeSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Subtle Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0d0c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2e2e2a;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center bg-[#0d0d0c] text-[#f4f4f0] pb-28">
+
+    <!-- Ambient Subtle Top Glow -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[360px] h-[160px] bg-champagne/10 blur-[90px] pointer-events-none z-0"></div>
+
+    <!-- Main Mobile Container (TMA Viewport) -->
+    <div class="w-full max-w-[480px] min-h-screen flex flex-col relative z-10">
+
+        <!-- Header: Brand & Live Project Pill -->
+        <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d0c]/85 border-b border-white/[0.08] px-4 py-3">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c5a880] to-[#8f724c] flex items-center justify-center text-[#0d0d0c] font-extrabold text-sm tracking-tight shadow-md">
+                        УР
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-base tracking-tight text-white">Умный Ремонт</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-limebadge/15 text-limebadge border border-limebadge/30">
+                                СНиП 3.04.01
+                            </span>
+                        </div>
+                        <a href="https://umniremont.pro" target="_blank" rel="noopener" class="text-xs text-champagne hover:underline flex items-center gap-1">
+                            <span>umniremont.pro</span>
+                            <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Live Summary Pill (Clicks to Cart) -->
+                <button onclick="switchScreen(3)" class="ur-card ur-card-interactive px-3 py-1.5 flex items-center gap-2.5 bg-[#171715] hover:border-champagne/40 text-left">
+                    <div>
+                        <div class="text-[10px] text-neutral-400 uppercase tracking-wider font-medium flex items-center gap-1">
+                            <span>Корзина</span>
+                            <span id="headerWeightBadge" class="text-champagne font-mono">0.0 т</span>
+                        </div>
+                        <div id="headerTotalSum" class="text-sm font-bold text-white font-mono">0 ₽</div>
+                    </div>
+                    <div class="w-7 h-7 rounded-lg bg-champagne/15 text-champagne flex items-center justify-center relative">
+                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                        <span id="headerCartCount" class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-champagne text-[#0d0d0c] text-[10px] font-extrabold flex items-center justify-center">
+                            14
+                        </span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Top Step Indicator Pills -->
+            <div class="grid grid-cols-4 gap-1.5 mt-3">
+                <button onclick="switchScreen(1)" id="topStep1" class="step-pill h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                    <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold step-num">1</span>
+                    <span>Объект</span>
+                </button>
+                <button onclick="switchScreen(2)" id="topStep2" class="step-pill h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                    <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold step-num">2</span>
+                    <span>Нормы</span>
+                </button>
+                <button onclick="switchScreen(3)" id="topStep3" class="step-pill h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                    <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold step-num">3</span>
+                    <span>Петрович</span>
+                </button>
+                <button onclick="switchScreen(4)" id="topStep4" class="step-pill h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                    <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold step-num">4</span>
+                    <span>Работы</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 px-4 pt-4 pb-6 space-y-4">
+
+            <!-- ========================================== -->
+            <!-- ЭКРАН 1: ПАРАМЕТРЫ ОБЪЕКТА                 -->
+            <!-- ========================================== -->
+            <section id="screen-1" class="screen-view space-y-4">
+                <!-- Hero Intro Banner -->
+                <div class="ur-card p-4 relative overflow-hidden bg-gradient-to-br from-[#1b1b18] to-[#141412]">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-champagne mb-1">
+                                <i data-lucide="Compass" class="w-3.5 h-3.5"></i>
+                                Шаг 1 из 4 • Геометрия квартиры
+                            </span>
+                            <h1 class="text-lg font-bold text-white leading-snug">Параметры вашего объекта</h1>
+                            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
+                                Задайте габариты помещения. Алгоритм рассчитает реальный объём черновых и инженерных материалов по строительным нормам.
+                            </p>
+                        </div>
+                        <div class="px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-right shrink-0">
+                            <div class="text-[10px] text-neutral-400">Площадь стен</div>
+                            <div id="computedWallAreaBadge" class="text-sm font-mono font-bold text-champagne">135.5 м²</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Выбор типа жилья -->
+                <div class="ur-card p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5 text-champagne"></i>
+                            Тип жилого фонда
+                        </label>
+                        <span id="housingImpactHint" class="text-[11px] text-champagne font-medium">Штукатурка ~15 мм</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" onclick="setHousingType('newbuild')" id="btnHousingNew" class="min-h-[64px] p-3 rounded-2xl border text-left transition-all flex flex-col justify-between">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-sm font-bold text-white">Новостройка</span>
+                                <span id="dotHousingNew" class="w-4 h-4 rounded-full border flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-champagne"></span>
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-neutral-400 mt-1">Бетон / монолит • ровная геометрия</span>
+                        </button>
+
+                        <button type="button" onclick="setHousingType('secondary')" id="btnHousingSec" class="min-h-[64px] p-3 rounded-2xl border text-left transition-all flex flex-col justify-between">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-sm font-bold text-white">Вторичка</span>
+                                <span id="dotHousingSec" class="w-4 h-4 rounded-full border flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-champagne hidden"></span>
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-neutral-400 mt-1">Старый фонд / кирпич • перепады стен</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Пресеты комнат или кастомный ввод по комнатам -->
+                <div class="ur-card p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-champagne"></i>
+                            Формат квартиры
+                        </label>
+                        <button type="button" onclick="toggleRoomMode()" id="btnToggleRoomMode" class="text-xs text-champagne font-medium flex items-center gap-1 hover:underline">
+                            <i data-lucide="Sliders-horizontal" class="w-3.5 h-3.5"></i>
+                            <span id="roomModeLabel">По комнатам</span>
+                        </button>
+                    </div>
+
+                    <!-- Пресеты: Студия, 1-к, 2-к (54 м² демо), 3-к -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="applyPreset('studio')" id="preset-studio" class="preset-btn min-h-[48px] rounded-xl border text-xs font-semibold flex flex-col items-center justify-center transition-all">
+                            <span>Студия</span>
+                            <span class="text-[10px] text-neutral-400 font-mono">28 м²</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('1k')" id="preset-1k" class="preset-btn min-h-[48px] rounded-xl border text-xs font-semibold flex flex-col items-center justify-center transition-all">
+                            <span>1-комн.</span>
+                            <span class="text-[10px] text-neutral-400 font-mono">40 м²</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('2k')" id="preset-2k" class="preset-btn min-h-[48px] rounded-xl border text-xs font-semibold flex flex-col items-center justify-center transition-all">
+                            <span>2-комн.</span>
+                            <span class="text-[10px] text-neutral-400 font-mono">54 м²</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('3k')" id="preset-3k" class="preset-btn min-h-[48px] rounded-xl border text-xs font-semibold flex flex-col items-center justify-center transition-all">
+                            <span>3-комн.</span>
+                            <span class="text-[10px] text-neutral-400 font-mono">78 м²</span>
+                        </button>
+                    </div>
+
+                    <!-- Детализация по комнатам (Коридор, Санузел, Кухня, Спальня/Гостиная) -->
+                    <div id="roomsBreakdownPanel" class="hidden pt-2 border-t border-white/[0.08] space-y-2.5">
+                        <div class="flex items-center justify-between text-[11px] text-neutral-400">
+                            <span>Точная экспликация помещений (м²):</span>
+                            <span class="text-champagne">Сумма = общая площадь</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div class="bg-[#0d0d0c] border border-white/[0.08] rounded-xl p-2.5">
+                                <label class="text-[11px] text-neutral-400 block">Коридор / Холл</label>
+                                <div class="flex items-center justify-between mt-1">
+                                    <input type="number" id="roomCorridor" min="2" max="50" step="0.5" value="8.5" oninput="updateFromRooms()" class="w-full bg-transparent text-white font-mono font-bold text-base focus:outline-none">
+                                    <span class="text-xs text-neutral-500 font-mono">м²</span>
+                                </div>
+                            </div>
+                            <div class="bg-[#0d0d0c] border border-white/[0.08] rounded-xl p-2.5">
+                                <label class="text-[11px] text-neutral-400 block flex items-center gap-1">
+                                    <span>Санузел (мокрая зона)</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                                </label>
+                                <div class="flex items-center justify-between mt-1">
+                                    <input type="number" id="roomBath" min="2" max="30" step="0.5" value="5.5" oninput="updateFromRooms()" class="w-full bg-transparent text-white font-mono font-bold text-base focus:outline-none">
+                                    <span class="text-xs text-neutral-500 font-mono">м²</span>
+                                </div>
+                            </div>
+                            <div class="bg-[#0d0d0c] border border-white/[0.08] rounded-xl p-2.5">
+                                <label class="text-[11px] text-neutral-400 block">Кухня-гостиная</label>
+                                <div class="flex items-center justify-between mt-1">
+                                    <input type="number" id="roomKitchen" min="5" max="80" step="0.5" value="16.0" oninput="updateFromRooms()" class="w-full bg-transparent text-white font-mono font-bold text-base focus:outline-none">
+                                    <span class="text-xs text-neutral-500 font-mono">м²</span>
+                                </div>
+                            </div>
+                            <div class="bg-[#0d0d0c] border border-white/[0.08] rounded-xl p-2.5">
+                                <label class="text-[11px] text-neutral-400 block">Жилые спальни</label>
+                                <div class="flex items-center justify-between mt-1">
+                                    <input type="number" id="roomBedroom" min="8" max="150" step="0.5" value="24.0" oninput="updateFromRooms()" class="w-full bg-transparent text-white font-mono font-bold text-base focus:outline-none">
+                                    <span class="text-xs text-neutral-500 font-mono">м²</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Основные числовые параметры: Площадь пола, Высота потолков, Периметр стен -->
+                    <div class="space-y-3 pt-1">
+                        <!-- Площадь пола -->
+                        <div class="bg-[#0d0d0c] border border-white/[0.07] rounded-2xl p-3.5">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-neutral-300 font-medium">Общая площадь пола</span>
+                                <div class="flex items-center gap-1.5 bg-[#171715] border border-white/[0.1] rounded-xl px-2.5 py-1">
+                                    <input type="number" id="inputArea" min="15" max="250" step="1" value="54" oninput="handleDimensionInput('area', this.value)" class="w-14 bg-transparent text-right font-mono font-bold text-base text-champagne focus:outline-none">
+                                    <span class="text-xs text-neutral-400 font-mono">м²</span>
+                                </div>
+                            </div>
+                            <input type="range" id="rangeArea" min="18" max="160" step="1" value="54" oninput="handleDimensionInput('area', this.value)" class="w-full">
+                            <div class="flex justify-between text-[10px] text-neutral-500 font-mono mt-1">
+                                <span>18 м²</span>
+                                <span>54 м² (Демо 2-к)</span>
+                                <span>160 м²</span>
+                            </div>
+                        </div>
+
+                        <!-- Высота потолков и Периметр стен -->
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div class="bg-[#0d0d0c] border border-white/[0.07] rounded-2xl p-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-neutral-400">Высота потолка</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.05] text-neutral-400 font-mono">H</span>
+                                </div>
+                                <div class="flex items-baseline justify-between mt-2">
+                                    <input type="number" id="inputHeight" min="2.4" max="4.5" step="0.05" value="2.80" oninput="handleDimensionInput('height', this.value)" class="w-20 bg-transparent font-mono font-bold text-xl text-white focus:outline-none">
+                                    <span class="text-xs text-neutral-400 font-mono">м</span>
+                                </div>
+                                <input type="range" id="rangeHeight" min="2.5" max="3.8" step="0.05" value="2.80" oninput="handleDimensionInput('height', this.value)" class="w-full mt-2">
+                            </div>
+
+                            <div class="bg-[#0d0d0c] border border-white/[0.07] rounded-2xl p-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-neutral-400">Периметр стен</span>
+                                    <button type="button" onclick="autoCalcPerimeter()" title="Авторасчёт по площади" class="text-[10px] px-1.5 py-0.5 rounded bg-champagne/15 text-champagne font-medium">
+                                        Авто
+                                    </button>
+                                </div>
+                                <div class="flex items-baseline justify-between mt-2">
+                                    <input type="number" id="inputPerimeter" min="16" max="220" step="1" value="54" oninput="handleDimensionInput('perimeter', this.value)" class="w-20 bg-transparent font-mono font-bold text-xl text-white focus:outline-none">
+                                    <span class="text-xs text-neutral-400 font-mono">п.м</span>
+                                </div>
+                                <input type="range" id="rangePerimeter" min="20" max="140" step="1" value="54" oninput="handleDimensionInput('perimeter', this.value)" class="w-full mt-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Конструктивные переключатели (ГКЛ перегородки и Стяжка пола) -->
+                <div class="ur-card p-4 space-y-3">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-champagne"></i>
+                        Конструктив и черновые этапы
+                    </label>
+
+                    <!-- Переключатель: Перегородки из ГКЛ -->
+                    <div class="p-3.5 rounded-2xl bg-[#0d0d0c] border border-white/[0.07] space-y-2.5">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-semibold text-white">Учитывать перегородки из ГКЛ</div>
+                                <div class="text-xs text-neutral-400">Влагостойкий Knauf ГСП + каркас ПС/ПН 50 мм</div>
+                            </div>
+                            <button type="button" onclick="toggleFeature('gkl')" id="toggleGklBtn" class="w-14 h-8 rounded-full p-1 transition-colors duration-200 flex items-center bg-champagne justify-end shrink-0">
+                                <span class="w-6 h-6 rounded-full bg-[#0d0d0c] shadow-md transition-transform"></span>
+                            </button>
+                        </div>
+                        <div id="gklSubConfig" class="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                            <span class="text-neutral-400">Площадь возводимых перегородок / коробов:</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="adjustSubParam('gklArea', -2)" class="w-7 h-7 rounded-lg bg-white/[0.06] text-white font-bold">-</button>
+                                <span id="gklAreaValue" class="font-mono font-bold text-champagne min-w-[46px] text-center">18 м²</span>
+                                <button type="button" onclick="adjustSubParam('gklArea', 2)" class="w-7 h-7 rounded-lg bg-white/[0.06] text-white font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Переключатель: Стяжка пола -->
+                    <div class="p-3.5 rounded-2xl bg-[#0d0d0c] border border-white/[0.07] space-y-2.5">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-semibold text-white">Нужна ли стяжка пола</div>
+                                <div class="text-xs text-neutral-400">Пескобетон М-300 + финишный ровнитель + демпфер</div>
+                            </div>
+                            <button type="button" onclick="toggleFeature('screed')" id="toggleScreedBtn" class="w-14 h-8 rounded-full p-1 transition-colors duration-200 flex items-center bg-champagne justify-end shrink-0">
+                                <span class="w-6 h-6 rounded-full bg-[#0d0d0c] shadow-md transition-transform"></span>
+                            </button>
+                        </div>
+                        <div id="screedSubConfig" class="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                            <span class="text-neutral-400">Средняя толщина черновой стяжки:</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="adjustSubParam('screedCm', -1)" class="w-7 h-7 rounded-lg bg-white/[0.06] text-white font-bold">-</button>
+                                <span id="screedCmValue" class="font-mono font-bold text-champagne min-w-[46px] text-center">4 см</span>
+                                <button type="button" onclick="adjustSubParam('screedCm', 1)" class="w-7 h-7 rounded-lg bg-white/[0.06] text-white font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA Button to Screen 2 -->
+                <button type="button" onclick="switchScreen(2)" class="w-full min-h-[54px] rounded-2xl gold-gradient gold-glow text-[#0d0d0c] font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-transform">
+                    <span>Перейти к умному расчёту материалов</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ЭКРАН 2: УМНЫЙ РАСЧЁТ МАТЕРИАЛОВ (ПЕТРОВИЧ) -->
+            <!-- ========================================== -->
+            <section id="screen-2" class="screen-view space-y-4 hidden">
+                <!-- Top Summary & Reserve Toggle Card -->
+                <div class="ur-card p-4 space-y-3.5">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-champagne">
+                                <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                                Шаг 2 из 4 • Нормативы расхода
+                            </span>
+                            <h2 class="text-lg font-bold text-white mt-0.5">База СТД «Петрович»</h2>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-xl bg-petrovich/15 border border-petrovich/30 text-petrovich text-[11px] font-bold flex items-center gap-1">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                            Цены актуальны
+                        </span>
+                    </div>
+
+                    <!-- Переключатель технологического запаса: +10% / +15% -->
+                    <div class="bg-[#0d0d0c] p-1.5 rounded-2xl border border-white/[0.08] grid grid-cols-2 gap-1.5">
+                        <button type="button" onclick="setReserveMargin(10)" id="btnReserve10" class="min-h-[48px] px-3 py-2 rounded-xl text-left transition-all flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold">+10% Запас</div>
+                                <div class="text-[10px] opacity-75">Стандартная геометрия</div>
+                            </div>
+                            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-black/30">СНиП</span>
+                        </button>
+                        <button type="button" onclick="setReserveMargin(15)" id="btnReserve15" class="min-h-[48px] px-3 py-2 rounded-xl text-left transition-all flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold">+15% Запас</div>
+                                <div class="text-[10px] opacity-75">Сложная геометрия / углы</div>
+                            </div>
+                            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-black/30">PRO</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-neutral-400 px-1">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="package-check" class="w-3.5 h-3.5 text-limebadge"></i>
+                            Округление вверх до целой упаковки
+                        </span>
+                        <span id="objectQuickDigest" class="font-mono text-neutral-300">54 м² • H 2.8 м</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Categories Container (Rendered via JS) -->
+                <div id="catalogCategoriesContainer" class="space-y-3.5"></div>
+
+                <!-- Navigation Footer inside Screen 2 -->
+                <div class="grid grid-cols-3 gap-2.5 pt-1">
+                    <button type="button" onclick="switchScreen(1)" class="col-span-1 min-h-[52px] rounded-2xl ur-card text-neutral-300 font-semibold text-xs flex items-center justify-center gap-1.5">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span>Параметры</span>
+                    </button>
+                    <button type="button" onclick="switchScreen(3)" class="col-span-2 min-h-[52px] rounded-2xl gold-gradient gold-glow text-[#0d0d0c] font-bold text-sm flex items-center justify-center gap-2">
+                        <span>Проверить корзину</span>
+                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ЭКРАН 3: КОРЗИНА СТРОЙМАТЕРИАЛОВ           -->
+            <!-- ========================================== -->
+            <section id="screen-3" class="screen-view space-y-4 hidden">
+                <!-- Logistics & Total Dashboard Card -->
+                <div class="ur-card p-4 bg-gradient-to-br from-[#1d1c18] via-[#171715] to-[#121210] border-champagne/30 space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-champagne">
+                                <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                                Шаг 3 из 4 • Сводная ведомость закупки
+                            </span>
+                            <h2 class="text-lg font-bold text-white mt-0.5">Корзина СТД «Петрович»</h2>
+                        </div>
+                        <button type="button" onclick="resetCartOverrides()" class="text-[11px] text-champagne hover:underline flex items-center gap-1 px-2.5 py-1 rounded-lg bg-champagne/10 border border-champagne/20">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                            <span>К нормам</span>
+                        </button>
+                    </div>
+
+                    <!-- Big Price & Tonnage Grid -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="bg-[#0d0d0c]/90 border border-white/[0.08] rounded-2xl p-3">
+                            <div class="text-[11px] text-neutral-400">Итого материалы</div>
+                            <div id="cartTotalRub" class="text-xl font-extrabold text-white font-mono mt-0.5">0 ₽</div>
+                            <div id="cartPerSqmRub" class="text-[11px] text-champagne font-mono mt-1">~0 ₽ / м² пола</div>
+                        </div>
+
+                        <div class="bg-[#0d0d0c]/90 border border-white/[0.08] rounded-2xl p-3">
+                            <div class="text-[11px] text-neutral-400">Общий вес партии</div>
+                            <div id="cartTotalWeightTons" class="text-xl font-extrabold text-limebadge font-mono mt-0.5">0.00 т</div>
+                            <div id="cartTotalWeightKg" class="text-[11px] text-neutral-400 font-mono mt-1">0 кг • доставка</div>
+                        </div>
+                    </div>
+
+                    <!-- Truck recommendation strip -->
+                    <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs">
+                        <div class="flex items-center gap-2 text-neutral-300">
+                            <i data-lucide="package" class="w-4 h-4 text-champagne shrink-0"></i>
+                            <span id="logisticsTruckHint">Рекомендована доставка: Газель / Валдай</span>
+                        </div>
+                        <span id="activePositionsBadge" class="font-mono text-[11px] text-neutral-400">14 поз.</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Cart Items List -->
+                <div class="space-y-2.5" id="cartItemsList"></div>
+
+                <!-- Action Buttons: Order in Petrovich & Copy Shopping List -->
+                <div class="ur-card p-4 space-y-2.5 bg-[#171715]">
+                    <!-- Кнопка 1: Заказать в Петровиче -->
+                    <button type="button" onclick="openPetrovichModal()" class="w-full min-h-[54px] rounded-2xl bg-[#ffcc00] hover:bg-[#ffd633] text-[#0d0d0c] font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-lg active:scale-[0.99] transition-all">
+                        <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                        <span>Заказать в Петровиче (Быстрый заказ по кодам)</span>
+                    </button>
+
+                    <!-- Кнопка 2: Скопировать список покупок -->
+                    <button type="button" onclick="copyShoppingList()" class="w-full min-h-[50px] rounded-2xl bg-[#0d0d0c] hover:bg-white/[0.05] text-white border border-white/[0.12] font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all">
+                        <i data-lucide="copy" class="w-4 h-4 text-champagne"></i>
+                        <span>Скопировать список покупок для снабженца</span>
+                    </button>
+
+                    <!-- Transition to Work Estimate -->
+                    <button type="button" onclick="switchScreen(4)" class="w-full min-h-[48px] rounded-2xl bg-champagne/15 hover:bg-champagne/25 text-champagne border border-champagne/30 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all">
+                        <span>Рассчитать стоимость работ мастеров «Умный Ремонт»</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ЭКРАН 4: БЛОК СТОИМОСТИ РАБОТ (ЛИДОГЕНЕРАЦИЯ) -->
+            <!-- ========================================== -->
+            <section id="screen-4" class="screen-view space-y-4 hidden">
+                <!-- Mandatory Policy Banner (No fixed price before engineer visit) -->
+                <div class="ur-card p-5 bg-gradient-to-br from-[#1f1c16] via-[#171715] to-[#121210] border-champagne/40 space-y-4 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-champagne/15 text-champagne border border-champagne/30">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                            Честный договор • Без скрытых доплат
+                        </span>
+                        <span id="workObjectSummaryTag" class="text-xs font-mono text-neutral-400">54 м²</span>
+                    </div>
+
+                    <!-- Обязательная плашка по ТЗ -->
+                    <div class="p-4 rounded-2xl bg-[#0d0d0c]/90 border border-champagne/30 space-y-2.5">
+                        <p class="text-sm sm:text-base text-white leading-relaxed font-medium">
+                            «🛠 Ориентировочная вилка стоимости работ мастеров: <span class="text-champagne font-extrabold font-mono text-base sm:text-lg underline decoration-champagne/40 underline-offset-4">от <span id="workRateFrom">19 500</span> ₽/м²</span>. Точный расчёт до рубля составляется индивидуально после замера и детального осмотра объекта — это страхует вас от скрытых доплат в процессе ремонта».
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-neutral-400">
+                            <span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">Фиксация сметы в договоре</span>
+                            <span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">Оплата поэтапно по актам</span>
+                            <span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">Гарантия 3 года</span>
+                        </div>
+                    </div>
+
+                    <!-- Why engineer measurement is critical -->
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Что делает инженер-сметчик на объекте (бесплатно):</div>
+                        <div class="grid grid-cols-1 gap-2 text-xs">
+                            <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <i data-lucide="scan-line" class="w-4 h-4 text-champagne shrink-0 mt-0.5"></i>
+                                <div>
+                                    <span class="font-semibold text-white">Лазерное 3D-сканирование плоскостей:</span>
+                                    <span class="text-neutral-400"> определяем реальные отклонения стен и перепады плиты перекрытия до миллиметра.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <i data-lucide="file-Spreadsheet" class="w-4 h-4 text-champagne shrink-0 mt-0.5"></i>
+                                <div>
+                                    <span class="font-semibold text-white">Финальная смета работ и графика поставок:</span>
+                                    <span class="text-neutral-400"> синхронизируем вашу корзину «Петровича» с графиком выхода профильных мастеров.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lead Form: Request Engineer / Foreman -->
+                <form id="leadForm" onsubmit="submitForemanRequest(event)" class="ur-card p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i data-lucide="user-check" class="w-4 h-4 text-champagne"></i>
+                            Заявка главному инженеру «Умный Ремонт»
+                        </h3>
+                        <span class="text-[11px] text-limebadge font-medium">Выезд 0 ₽</span>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <div>
+                            <label class="text-[11px] text-neutral-400 block mb-1">Ваше имя</label>
+                            <input type="text" id="leadName" required placeholder="Александр" class="w-full h-12 px-3.5 rounded-xl bg-[#0d0d0c] border border-white/[0.1] text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-champagne">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] text-neutral-400 block mb-1">Телефон или @username в Telegram</label>
+                            <input type="text" id="leadContact" required placeholder="+7 (999) 000-00-00 или @username" class="w-full h-12 px-3.5 rounded-xl bg-[#0d0d0c] border border-white/[0.1] text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-champagne">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] text-neutral-400 block mb-1">ЖК / Адрес объекта или комментарий (опционально)</label>
+                            <input type="text" id="leadAddress" placeholder="Например: ЖК ЗИЛАРТ, 54 м², ключи получены" class="w-full h-12 px-3.5 rounded-xl bg-[#0d0d0c] border border-white/[0.1] text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-champagne">
+                        </div>
+
+                        <!-- Attach Cart Checkbox -->
+                        <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#0d0d0c] border border-white/[0.06] cursor-pointer">
+                            <input type="checkbox" id="attachEstimateCheck" checked class="w-4 h-4 accent-[#c5a880] rounded">
+                            <span class="text-xs text-neutral-300">Прикрепить расчёт корзины «Петрович» (<span id="leadCartTotalPreview" class="text-champagne font-mono">0 ₽</span>)</span>
+                        </label>
+                    </div>
+
+                    <!-- Primary Lead CTA Button -->
+                    <button type="submit" class="w-full min-h-[54px] rounded-2xl gold-gradient gold-glow text-[#0d0d0c] font-extrabold text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-transform">
+                        <i data-lucide="ruler" class="w-4 h-4"></i>
+                        <span>Вызвать замерщика / Связаться с прорабом</span>
+                    </button>
+
+                    <div class="flex items-center justify-between pt-1 text-[11px] text-neutral-400">
+                        <a href="https://umniremont.pro" target="_blank" rel="noopener" class="hover:text-champagne flex items-center gap-1">
+                            <i data-lucide="globe" class="w-3.5 h-3.5 text-champagne"></i>
+                            <span>Официальный сайт: umniremont.pro</span>
+                        </a>
+                        <span>Отвечаем за 10 минут</span>
+                    </div>
+                </form>
+
+                <!-- Lead Confirmation Box (Shown after submit) -->
+                <div id="leadSuccessBox" class="hidden ur-card p-4 border-limebadge/40 bg-limebadge/10 space-y-2">
+                    <div class="flex items-center gap-2 text-limebadge font-bold text-sm">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        <span>Заявка и ведомость материалов сформированы!</span>
+                    </div>
+                    <p id="leadSuccessText" class="text-xs text-neutral-300 leading-relaxed"></p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- STICKY BOTTOM TAB BAR (Mobile-First min 48px targets) -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 backdrop-blur-xl bg-[#0d0d0c]/95 border-t border-white/[0.08] px-3 py-2">
+            <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" onclick="switchScreen(1)" id="navBtn-1" class="min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-all">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Объект</span>
+                </button>
+                <button type="button" onclick="switchScreen(2)" id="navBtn-2" class="min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-all">
+                    <i data-lucide="calculator" class="w-4 h-4"></i>
+                    <span>Расчёт</span>
+                </button>
+                <button type="button" onclick="switchScreen(3)" id="navBtn-3" class="min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-all relative">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>Корзина</span>
+                </button>
+                <button type="button" onclick="switchScreen(4)" id="navBtn-4" class="min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-all">
+                    <i data-lucide="hard-hat" class="w-4 h-4"></i>
+                    <span>Прораб</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- MODAL: Быстрый заказ по кодам в СТД «Петрович» -->
+    <div id="petrovichModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-[460px] bg-[#171715] border border-white/[0.12] rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-[fadeSlideIn_0.2s_ease]">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-[#ffcc00] text-[#0d0d0c] font-black flex items-center justify-center text-lg">
+                        П
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Быстрый заказ по кодам</h3>
+                        <p class="text-xs text-neutral-400">Экспорт корзины на сайт petrovich.ru</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closePetrovichModal()" class="w-9 h-9 rounded-xl bg-white/[0.06] text-neutral-400 hover:text-white flex items-center justify-center">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-[#0d0d0c] border border-white/[0.08] space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-neutral-400">
+                    <span>Формат: <strong class="text-white font-mono">Код товара — Количество</strong></span>
+                    <span id="modalCodesCount" class="text-champagne font-mono">14 позиций</span>
+                </div>
+                <textarea id="petrovichCodesTextarea" readonly rows="7" class="w-full bg-transparent text-xs font-mono text-limebadge focus:outline-none resize-none leading-relaxed"></textarea>
+            </div>
+
+            <div class="text-xs text-neutral-400 leading-relaxed bg-white/[0.03] p-3 rounded-xl border border-white/[0.06]">
+                <strong class="text-white">Инструкция:</strong> Нажмите «Скопировать коды», затем перейдите на страницу сервиса «Заказ по кодам» в Петровиче и вставьте список в поле загрузки.
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button type="button" onclick="copyPetrovichCodesOnly()" class="min-h-[48px] rounded-xl bg-champagne text-[#0d0d0c] font-bold text-xs flex items-center justify-center gap-2">
+                    <i data-lucide="copy-check" class="w-4 h-4"></i>
+                    <span>Скопировать коды</span>
+                </button>
+                <a href="https://petrovich.ru/cart/" target="_blank" rel="noopener" onclick="triggerHaptic('light')" class="min-h-[48px] rounded-xl bg-[#ffcc00] text-[#0d0d0c] font-extrabold text-xs flex items-center justify-center gap-2">
+                    <span>Открыть petrovich.ru</span>
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification (No alert() used anywhere) -->
+    <div id="toastNotification" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-200">
+        <div class="px-4 py-2.5 rounded-2xl bg-[#22221f] border border-champagne/40 text-white shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-limebadge shrink-0"></i>
+            <span id="toastMessage">Скопировано в буфер обмена</span>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. ИНИЦИАЛИЗАЦИЯ TELEGRAM MINI APP & HAPTIC FEEDBACK
+        // =========================================================================
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            try {
+                tg.ready();
+                tg.expand();
+                if (tg.setHeaderColor) tg.setHeaderColor('#0d0d0c');
+                if (tg.setBackgroundColor) tg.setBackgroundColor('#0d0d0c');
+            } catch (err) {
+                console.warn('Telegram WebApp init fallback:', err);
+            }
+        }
+
+        function triggerHaptic(type = 'light') {
+            try {
+                if (tg?.HapticFeedback) {
+                    if (type === 'success' || type === 'warning' || type === 'error') {
+                        tg.HapticFeedback.notificationOccurred(type);
+                    } else {
+                        tg.HapticFeedback.impactOccurred(type);
+                    }
+                }
+            } catch (e) {
+                // Ignore haptic errors in standard desktop browsers
+            }
+        }
+
+        // =========================================================================
+        // 2. СОСТОЯНИЕ ПРОЕКТА (ДЕМО ПО УМОЛЧАНИЮ: 2-К КВАРТИРА 54 М²)
+        // =========================================================================
+        const state = {
+            currentScreen: 1,
+            housingType: 'newbuild', // 'newbuild' | 'secondary'
+            preset: '2k',            // 'studio' | '1k' | '2k' | '3k' | 'custom'
+            roomModeOpen: false,
+            area: 54,                // Площадь пола, м²
+            height: 2.80,            // Высота потолков, м
+            perimeter: 54,           // Периметр стен, п.м
+            bathArea: 5.5,           // Площадь санузла (мокрой зоны), м²
+            useGkl: true,            // Учитывать перегородки из ГКЛ
+            gklArea: 18,             // Площадь перегородок ГКЛ, м²
+            useScreed: true,         // Нужна ли стяжка пола
+            screedCm: 4,             // Толщина стяжки в см
+            reservePercent: 10,      // +10% (стандарт) или +15% (сложная геометрия)
+            // Пользовательские корректировки корзины: { [skuId]: { customQty: number | null, excluded: boolean } }
+            cartOverrides: {}
+        };
+
+        // =========================================================================
+        // 3. КАТАЛОГ СТД «ПЕТРОВИЧ» С ФОРМУЛАМИ РАСЧЁТА ПО НОРМАМ СНиП
+        // =========================================================================
+        const PETROVICH_CATALOG = [
+            {
+                categoryId: 'walls',
+                categoryTitle: '1. Штукатурка и подготовка стен',
+                categoryIcon: 'brick-wall',
+                items: [
+                    {
+                        id: 'rotband_30',
+                        sku: '100234',
+                        name: 'Штукатурка гипсовая Knauf Ротбанд белая',
+                        unitBadge: 'мешок 30 кг',
+                        unitShort: 'меш.',
+                        price: 540,
+                        weightKg: 30,
+                        normHint: 'Расход 8.5 кг/м² на 10 мм слоя (новостройка ~15 мм, вторичка ~22 мм)',
+                        calcBasePacks: (s, geom) => {
+                            const layerFactor = s.housingType === 'newbuild' ? 1.5 : 2.2; // 15мм vs 22мм
+                            const totalKg = geom.netWallArea * 8.5 * layerFactor;
+                            return totalKg / 30;
+                        }
+                    },
+                    {
+                        id: 'ceresit_ct17',
+                        sku: '101450',
+                        name: 'Грунтовка глубокого проникновения Ceresit CT17',
+                        unitBadge: 'канистра 10 л',
+                        unitShort: 'кан.',
+                        price: 1150,
+                        weightKg: 10.2,
+                        normHint: 'Расход 0.15 л/м² (обработка стен в 2 цикла + основание пола)',
+                        calcBasePacks: (s, geom) => {
+                            const surfaceToPrime = (geom.netWallArea * 2) + s.area;
+                            const liters = surfaceToPrime * 0.15;
+                            return liters / 10;
+                        }
+                    },
+                    {
+                        id: 'beacon_profile',
+                        sku: '102110',
+                        name: 'Профиль маячковый штукатурный 6/10 мм, 3 м',
+                        unitBadge: 'рейка 3 м',
+                        unitShort: 'шт.',
+                        price: 65,
+                        weightKg: 0.25,
+                        normHint: 'Установка маяков с шагом 1.2 м по всему периметру стен',
+                        calcBasePacks: (s) => {
+                            return Math.ceil(s.perimeter / 1.2);
+                        }
+                    },
+                    {
+                        id: 'mesh_5x5',
+                        sku: '103220',
+                        name: 'Сетка штукатурная стеклотканевая 5х5 мм',
+                        unitBadge: 'рулон 50 м²',
+                        unitShort: 'рул.',
+                        price: 2400,
+                        weightKg: 3.5,
+                        normHint: 'Армирование штукатурного слоя и стыков разнородных оснований',
+                        calcBasePacks: (s, geom) => {
+                            const factor = s.housingType === 'secondary' ? 1.0 : 0.75;
+                            return (geom.netWallArea * factor) / 50;
+                        }
+                    }
+                ]
+            },
+            {
+                categoryId: 'floors',
+                categoryTitle: '2. Полы и устройство стяжки',
+                categoryIcon: 'layers-3',
+                items: [
+                    {
+                        id: 'peskobeton_m300',
+                        sku: '104500',
+                        name: 'Пескобетон М-300 крупнозернистый ГОСТ',
+                        unitBadge: 'мешок 40 кг',
+                        unitShort: 'меш.',
+                        price: 260,
+                        weightKg: 40,
+                        normHint: 'Расход 20 кг/м² на 1 см толщины слоя стяжки',
+                        calcBasePacks: (s) => {
+                            if (!s.useScreed) return 0;
+                            const totalKg = s.area * 20 * s.screedCm;
+                            return totalKg / 40;
+                        }
+                    },
+                    {
+                        id: 'unis_gorizont',
+                        sku: '104610',
+                        name: 'Наливной пол финишный Unis Горизонт',
+                        unitBadge: 'мешок 20 кг',
+                        unitShort: 'меш.',
+                        price: 490,
+                        weightKg: 20,
+                        normHint: 'Финишное нивелирование под чистовое покрытие (~7.5 кг/м² на 5 мм)',
+                        calcBasePacks: (s) => {
+                            if (!s.useScreed) return 0;
+                            const totalKg = s.area * 7.5;
+                            return totalKg / 20;
+                        }
+                    },
+                    {
+                        id: 'damper_tape',
+                        sku: '105120',
+                        name: 'Демпферная кромочная лента 100х8 мм',
+                        unitBadge: 'рулон 25 м',
+                        unitShort: 'рул.',
+                        price: 450,
+                        weightKg: 0.4,
+                        normHint: 'Компенсационный шов по периметру всех помещений',
+                        calcBasePacks: (s) => {
+                            if (!s.useScreed) return 0;
+                            return s.perimeter / 25;
+                        }
+                    }
+                ]
+            },
+            {
+                categoryId: 'gkl',
+                categoryTitle: '3. Гипсокартон и перегородки',
+                categoryIcon: 'panel-left',
+                items: [
+                    {
+                        id: 'knauf_gsp_moisture',
+                        sku: '106110',
+                        name: 'Влагостойкий ГСП Knauf 2500х1200х12.5 мм',
+                        unitBadge: 'лист 3.0 м²',
+                        unitShort: 'лист.',
+                        price: 495,
+                        weightKg: 29,
+                        normHint: 'Двусторонняя обшивка перегородок и инсталляционных коробов (лист = 3 м²)',
+                        calcBasePacks: (s) => {
+                            if (!s.useGkl) return 0;
+                            return (s.gklArea * 2) / 3.0;
+                        }
+                    },
+                    {
+                        id: 'profile_ps_50',
+                        sku: '107200',
+                        name: 'Профиль стоечный Knauf ПС 50/50, 3 м (0.6 мм)',
+                        unitBadge: 'хлыст 3.0 м',
+                        unitShort: 'шт.',
+                        price: 340,
+                        weightKg: 1.8,
+                        normHint: 'Монтаж вертикальных стоек каркаса с шагом 400/600 мм',
+                        calcBasePacks: (s) => {
+                            if (!s.useGkl) return 0;
+                            return s.gklArea * 0.9;
+                        }
+                    },
+                    {
+                        id: 'profile_pn_50',
+                        sku: '107210',
+                        name: 'Профиль направляющий Knauf ПН 50/40, 3 м',
+                        unitBadge: 'хлыст 3.0 м',
+                        unitShort: 'шт.',
+                        price: 270,
+                        weightKg: 1.4,
+                        normHint: 'Направляющий контур перегородок по полу и потолку',
+                        calcBasePacks: (s) => {
+                            if (!s.useGkl) return 0;
+                            return s.gklArea * 0.45;
+                        }
+                    }
+                ]
+            },
+            {
+                categoryId: 'hydro',
+                categoryTitle: '4. Гидроизоляция (санузлы и мокрые зоны)',
+                categoryIcon: 'droplets',
+                items: [
+                    {
+                        id: 'knauf_flechendicht',
+                        sku: '108110',
+                        name: 'Гидроизоляция Knauf Флэхендихт мастика',
+                        unitBadge: 'ведро 5 кг',
+                        unitShort: 'вед.',
+                        price: 1850,
+                        weightKg: 5.2,
+                        normHint: 'Двухслойная обмазка пола санузла и зон прямого попадания воды (~1.2 кг/м²)',
+                        calcBasePacks: (s) => {
+                            const wetSurfaceArea = s.bathArea * 2.4; // пол + бортики и мокрая зона душа/ванны
+                            const totalKg = wetSurfaceArea * 1.2;
+                            return totalKg / 5;
+                        }
+                    },
+                    {
+                        id: 'knauf_hydro_tape',
+                        sku: '108125',
+                        name: 'Лента гидроизоляционная Knauf Флэхендихтбанд',
+                        unitBadge: 'рулон 10 м',
+                        unitShort: 'рул.',
+                        price: 1290,
+                        weightKg: 0.35,
+                        normHint: 'Герметизация угловых примыканий пол-стена в мокрых зонах',
+                        calcBasePacks: (s) => {
+                            const approxBathPerimeter = Math.sqrt(s.bathArea) * 4 * 1.3;
+                            return approxBathPerimeter / 10;
+                        }
+                    }
+                ]
+            },
+            {
+                categoryId: 'electrics',
+                categoryTitle: '5. Электрика (черновая трассировка ГОСТ)',
+                categoryIcon: 'zap',
+                items: [
+                    {
+                        id: 'cable_3x25',
+                        sku: '110250',
+                        name: 'Кабель силовой ВВГ-Пнг(А)-LS 3х2.5 мм² ГОСТ',
+                        unitBadge: 'метраж (1 м)',
+                        unitShort: 'м',
+                        price: 95,
+                        weightKg: 0.13,
+                        normHint: 'Розеточные группы и силовые линии кухни (~2.4 п.м на 1 м² площади)',
+                        calcBasePacks: (s) => {
+                            return s.area * 2.4;
+                        }
+                    },
+                    {
+                        id: 'cable_3x15',
+                        sku: '110150',
+                        name: 'Кабель силовой ВВГ-Пнг(А)-LS 3х1.5 мм² ГОСТ',
+                        unitBadge: 'метраж (1 м)',
+                        unitShort: 'м',
+                        price: 62,
+                        weightKg: 0.09,
+                        normHint: 'Группы основного и сценарного освещения (~1.5 п.м на 1 м² площади)',
+                        calcBasePacks: (s) => {
+                            return s.area * 1.5;
+                        }
+                    },
+                    {
+                        id: 'corrugated_pipe_20',
+                        sku: '111200',
+                        name: 'Гофра ПВХ 20 мм тяжёлая с металлической протяжкой',
+                        unitBadge: 'метраж (1 м)',
+                        unitShort: 'м',
+                        price: 25,
+                        weightKg: 0.04,
+                        normHint: 'Защита кабельных трасс по потолку и в стяжке пола (~75% длины кабеля)',
+                        calcBasePacks: (s) => {
+                            return s.area * 2.9;
+                        }
+                    },
+                    {
+                        id: 'socket_boxes_se',
+                        sku: '112100',
+                        name: 'Подрозетник Schneider Electric IMT35100 68х45 мм',
+                        unitBadge: 'штука',
+                        unitShort: 'шт.',
+                        price: 35,
+                        weightKg: 0.03,
+                        normHint: 'Норматив комфорта «Умный Ремонт»: ~1.1 точки на 1 м² квартиры',
+                        calcBasePacks: (s) => {
+                            return s.area * 1.1;
+                        }
+                    }
+                ]
+            }
+        ];
+
+        // =========================================================================
+        // 4. ЯДРО РАСЧЁТА ОБЪЁМОВ, ОКРУГЛЕНИЯ И ВЕСА
+        // =========================================================================
+        function computeGeometry() {
+            // Вычитаем 10% на дверные и оконные проёмы из площади стен
+            const grossWallArea = state.perimeter * state.height;
+            const netWallArea = Math.max(15, grossWallArea * 0.9);
+            return {
+                grossWallArea: Number(grossWallArea.toFixed(1)),
+                netWallArea: Number(netWallArea.toFixed(1))
+            };
+        }
+
+        function calculateAllItems() {
+            const geom = computeGeometry();
+            const reserveMultiplier = 1 + (state.reservePercent / 100);
+            const results = [];
+
+            PETROVICH_CATALOG.forEach(category => {
+                category.items.forEach(item => {
+                    const rawPacks = item.calcBasePacks(state, geom);
+                    // Учитываем технологический запас (+10% или +15%) и всегда округляем ВВЕРХ до целой упаковки
+                    const recommendedQty = rawPacks > 0 ? Math.ceil(rawPacks * reserveMultiplier) : 0;
+
+                    const override = state.cartOverrides[item.id] || { customQty: null, excluded: false };
+                    const effectiveQty = override.excluded
+                        ? 0
+                        : (override.customQty !== null ? override.customQty : recommendedQty);
+
+                    const linePrice = effectiveQty * item.price;
+                    const lineWeightKg = effectiveQty * item.weightKg;
+
+                    results.push({
+                        ...item,
+                        categoryId: category.categoryId,
+                        categoryTitle: category.categoryTitle,
+                        recommendedQty,
+                        effectiveQty,
+                        isExcluded: override.excluded,
+                        isCustomEdited: override.customQty !== null && override.customQty !== recommendedQty,
+                        linePrice,
+                        lineWeightKg
+                    });
+                });
+            });
+
+            return { geom, items: results };
+        }
+
+        function formatRub(num) {
+            return Math.round(num).toLocaleString('ru-RU') + ' ₽';
+        }
+
+        // =========================================================================
+        // 5. УПРАВЛЕНИЕ ПАРАМЕТРАМИ ОБЪЕКТА (ЭКРАН 1)
+        // =========================================================================
+        const PRESET_CONFIGS = {
+            'studio': { area: 28, height: 2.75, perimeter: 32, gklArea: 10, rooms: { corridor: 4.5, bath: 4.0, kitchen: 7.5, bedroom: 12.0 } },
+            '1k':     { area: 40, height: 2.75, perimeter: 42, gklArea: 14, rooms: { corridor: 6.5, bath: 4.5, kitchen: 12.0, bedroom: 17.0 } },
+            '2k':     { area: 54, height: 2.80, perimeter: 54, gklArea: 18, rooms: { corridor: 8.5, bath: 5.5, kitchen: 16.0, bedroom: 24.0 } },
+            '3k':     { area: 78, height: 2.85, perimeter: 74, gklArea: 26, rooms: { corridor: 12.0, bath: 7.0, kitchen: 21.0, bedroom: 38.0 } }
+        };
+
+        function setHousingType(type) {
+            triggerHaptic('light');
+            state.housingType = type;
+            updateAllUI();
+        }
+
+        function applyPreset(presetKey) {
+            triggerHaptic('medium');
+            const cfg = PRESET_CONFIGS[presetKey];
+            if (!cfg) return;
+
+            state.preset = presetKey;
+            state.area = cfg.area;
+            state.height = cfg.height;
+            state.perimeter = cfg.perimeter;
+            state.bathArea = cfg.rooms.bath;
+            state.gklArea = cfg.gklArea;
+
+            // Update room inputs
+            document.getElementById('roomCorridor').value = cfg.rooms.corridor;
+            document.getElementById('roomBath').value = cfg.rooms.bath;
+            document.getElementById('roomKitchen').value = cfg.rooms.kitchen;
+            document.getElementById('roomBedroom').value = cfg.rooms.bedroom;
+
+            syncDimensionInputs();
+            updateAllUI();
+        }
+
+        function toggleRoomMode() {
+            triggerHaptic('light');
+            state.roomModeOpen = !state.roomModeOpen;
+            const panel = document.getElementById('roomsBreakdownPanel');
+            const label = document.getElementById('roomModeLabel');
+            if (state.roomModeOpen) {
+                panel.classList.remove('hidden');
+                label.textContent = 'Скрыть комнаты';
+            } else {
+                panel.classList.add('hidden');
+                label.textContent = 'По комнатам';
+            }
+        }
+
+        function updateFromRooms() {
+            const c = Math.max(1, parseFloat(document.getElementById('roomCorridor').value) || 0);
+            const b = Math.max(1.5, parseFloat(document.getElementById('roomBath').value) || 0);
+            const k = Math.max(3, parseFloat(document.getElementById('roomKitchen').value) || 0);
+            const bed = Math.max(4, parseFloat(document.getElementById('roomBedroom').value) || 0);
+
+            const sumArea = Math.round((c + b + k + bed) * 10) / 10;
+            state.area = Math.min(250, Math.max(15, sumArea));
+            state.bathArea = b;
+            state.preset = 'custom';
+            state.perimeter = Math.round(state.area * 1.0); // Эмпирический периметр с межкомнатными стенами
+            syncDimensionInputs();
+            updateAllUI();
+        }
+
+        function handleDimensionInput(field, rawValue) {
+            let val = parseFloat(rawValue);
+            if (isNaN(val)) return;
+
+            if (field === 'area') {
+                val = Math.min(250, Math.max(15, val));
+                state.area = val;
+                state.preset = 'custom';
+                // Пропорционально обновляем периметр и мокрую зону
+                state.perimeter = Math.round(val * 1.0);
+                state.bathArea = Number(Math.max(3.5, Math.min(14, val * 0.1)).toFixed(1));
+            } else if (field === 'height') {
+                val = Math.min(4.5, Math.max(2.3, val));
+                state.height = val;
+            } else if (field === 'perimeter') {
+                val = Math.min(240, Math.max(16, val));
+                state.perimeter = val;
+            }
+
+            syncDimensionInputs();
+            updateAllUI();
+        }
+
+        function autoCalcPerimeter() {
+            triggerHaptic('light');
+            state.perimeter = Math.round(state.area * 1.0);
+            syncDimensionInputs();
+            updateAllUI();
+            showToast('Периметр рассчитан по площади квартиры');
+        }
+
+        function syncDimensionInputs() {
+            document.getElementById('inputArea').value = state.area;
+            document.getElementById('rangeArea').value = state.area;
+            document.getElementById('inputHeight').value = state.height;
+            document.getElementById('rangeHeight').value = state.height;
+            document.getElementById('inputPerimeter').value = state.perimeter;
+            document.getElementById('rangePerimeter').value = state.perimeter;
+        }
+
+        function toggleFeature(feature) {
+            triggerHaptic('light');
+            if (feature === 'gkl') {
+                state.useGkl = !state.useGkl;
+            } else if (feature === 'screed') {
+                state.useScreed = !state.useScreed;
+            }
+            updateAllUI();
+        }
+
+        function adjustSubParam(param, delta) {
+            triggerHaptic('light');
+            if (param === 'gklArea') {
+                state.gklArea = Math.min(120, Math.max(4, state.gklArea + delta));
+            } else if (param === 'screedCm') {
+                state.screedCm = Math.min(12, Math.max(2, state.screedCm + delta));
+            }
+            updateAllUI();
+        }
+
+        function setReserveMargin(percent) {
+            triggerHaptic('medium');
+            state.reservePercent = percent;
+            updateAllUI();
+        }
+
+        // =========================================================================
+        // 6. РЕНДЕР ЭКРАНА 2 (КАТАЛОГ НОРМ) И ЭКРАНА 3 (КОРЗИНА ПЕТРОВИЧА)
+        // =========================================================================
+        function renderCatalogScreen(calculatedItems) {
+            const container = document.getElementById('catalogCategoriesContainer');
+            const itemMap = {};
+            calculatedItems.forEach(i => { itemMap[i.id] = i; });
+
+            let html = '';
+            PETROVICH_CATALOG.forEach(cat => {
+                const catItems = cat.items.map(i => itemMap[i.id]);
+                const catTotalRub = catItems.reduce((acc, i) => acc + i.linePrice, 0);
+
+                html += `
+                    <div class="ur-card overflow-hidden">
+                        <div class="px-4 py-3 bg-white/[0.02] border-b border-white/[0.07] flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="${cat.categoryIcon}" class="w-4 h-4 text-champagne"></i>
+                                <h3 class="text-xs sm:text-sm font-bold text-white">${cat.categoryTitle}</h3>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-champagne">${formatRub(catTotalRub)}</span>
+                        </div>
+                        <div class="divide-y divide-white/[0.06]">
+                `;
+
+                catItems.forEach(item => {
+                    const isZero = item.effectiveQty === 0;
+                    html += `
+                        <div class="p-3.5 transition-opacity ${isZero ? 'opacity-45' : ''}">
+                            <div class="flex items-start justify-between gap-2.5">
+                                <div class="space-y-1">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-petrovich/15 text-petrovich font-semibold">
+                                            Арт. ${item.sku}
+                                        </span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 font-medium">
+                                            ${item.unitBadge}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs sm:text-sm font-semibold text-white leading-snug">${item.name}</div>
+                                    <div class="text-[11px] text-neutral-400 leading-relaxed">${item.normHint}</div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="text-sm font-mono font-extrabold text-white">${item.effectiveQty} ${item.unitShort}</div>
+                                    <div class="text-xs font-mono text-champagne mt-0.5">${formatRub(item.linePrice)}</div>
+                                    <div class="text-[10px] font-mono text-neutral-500 mt-0.5">${item.price} ₽ / ед.</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderCartScreen(calculatedItems) {
+            const listEl = document.getElementById('cartItemsList');
+            let html = '';
+
+            calculatedItems.forEach(item => {
+                // Skip items disabled by global toggle (e.g. GKL off and not manually forced)
+                if (item.recommendedQty === 0 && item.effectiveQty === 0 && !item.isExcluded) {
+                    return;
+                }
+
+                const excludedClass = item.isExcluded ? 'opacity-50 bg-[#121210]' : 'bg-[#171715]';
+                const strikeClass = item.isExcluded ? 'line-through text-neutral-500' : 'text-white';
+
+                html += `
+                    <div class="ur-card p-3.5 ${excludedClass}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="space-y-1 pr-2">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.07] text-champagne font-semibold">
+                                        Код ${item.sku}
+                                    </span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] text-neutral-400">
+                                        ${item.unitBadge}
+                                    </span>
+                                    ${item.isCustomEdited && !item.isExcluded ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-champagne">Изменено</span>` : ''}
+                                </div>
+                                <div class="text-xs sm:text-sm font-semibold ${strikeClass} leading-snug">${item.name}</div>
+                            </div>
+
+                            <!-- Кнопка вычеркнуть («Уже есть в наличии») -->
+                            <button type="button" onclick="toggleExcludeItem('${item.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all shrink-0 ${
+                                item.isExcluded
+                                    ? 'bg-limebadge/15 text-limebadge border-limebadge/30'
+                                    : 'bg-white/[0.04] text-neutral-400 border-white/[0.08] hover:text-white'
+                            }">
+                                ${item.isExcluded ? '✓ В наличии' : 'Есть в наличии'}
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-white/[0.06]">
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="changeCartQty('${item.id}', -1)" ${item.isExcluded ? 'disabled' : ''} class="w-9 h-9 rounded-xl bg-[#0d0d0c] border border-white/[0.1] text-white font-bold text-base flex items-center justify-center active:scale-95 disabled:opacity-30">
+                                    −
+                                </button>
+                                <div class="min-w-[68px] text-center">
+                                    <div class="text-sm font-mono font-extrabold text-white">${item.effectiveQty} <span class="text-[11px] font-normal text-neutral-400">${item.unitShort}</span></div>
+                                    <div class="text-[10px] font-mono text-neutral-500">Норма: ${item.recommendedQty}</div>
+                                </div>
+                                <button type="button" onclick="changeCartQty('${item.id}', 1)" ${item.isExcluded ? 'disabled' : ''} class="w-9 h-9 rounded-xl bg-[#0d0d0c] border border-white/[0.1] text-white font-bold text-base flex items-center justify-center active:scale-95 disabled:opacity-30">
+                                    +
+                                </button>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="text-sm font-mono font-bold ${item.isExcluded ? 'text-neutral-500' : 'text-champagne'}">${formatRub(item.linePrice)}</div>
+                                <div class="text-[10px] font-mono text-neutral-500">${(item.lineWeightKg).toFixed(1)} кг</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        // =========================================================================
+        // 7. ОПЕРАЦИИ С КОРЗИНОЙ (+/- И «УЖЕ ЕСТЬ В НАЛИЧИИ»)
+        // =========================================================================
+        function changeCartQty(itemId, delta) {
+            triggerHaptic('light');
+            const { items } = calculateAllItems();
+            const target = items.find(i => i.id === itemId);
+            if (!target || target.isExcluded) return;
+
+            const step = (target.unitShort === 'м' || target.unitShort === 'шт.') && target.recommendedQty > 25 ? 5 : 1;
+            const newQty = Math.max(0, target.effectiveQty + (delta * step));
+
+            if (!state.cartOverrides[itemId]) {
+                state.cartOverrides[itemId] = { customQty: newQty, excluded: false };
+            } else {
+                state.cartOverrides[itemId].customQty = newQty;
+            }
+            updateAllUI();
+        }
+
+        function toggleExcludeItem(itemId) {
+            triggerHaptic('medium');
+            if (!state.cartOverrides[itemId]) {
+                state.cartOverrides[itemId] = { customQty: null, excluded: true };
+            } else {
+                state.cartOverrides[itemId].excluded = !state.cartOverrides[itemId].excluded;
+            }
+            updateAllUI();
+        }
+
+        function resetCartOverrides() {
+            triggerHaptic('medium');
+            state.cartOverrides = {};
+            updateAllUI();
+            showToast('Корзина возвращена к расчёту по СНиП');
+        }
+
+        // =========================================================================
+        // 8. ОБНОВЛЕНИЕ ВСЕХ ЭЛЕМЕНТОВ ИНТЕРФЕЙСА
+        // =========================================================================
+        function updateAllUI() {
+            const { geom, items } = calculateAllItems();
+
+            // 1. Топ-бейджи и сводка
+            const totalRub = items.reduce((acc, i) => acc + i.linePrice, 0);
+            const totalWeightKg = items.reduce((acc, i) => acc + i.lineWeightKg, 0);
+            const totalWeightTons = totalWeightKg / 1000;
+            const activePositions = items.filter(i => i.effectiveQty > 0).length;
+
+            document.getElementById('headerTotalSum').textContent = formatRub(totalRub);
+            document.getElementById('headerWeightBadge').textContent = `${totalWeightTons.toFixed(1)} т`;
+            document.getElementById('headerCartCount').textContent = activePositions;
+            document.getElementById('computedWallAreaBadge').textContent = `${geom.netWallArea} м²`;
+
+            // 2. Экран 1: Кнопки Новостройка / Вторичка
+            const isNew = state.housingType === 'newbuild';
+            const btnNew = document.getElementById('btnHousingNew');
+            const btnSec = document.getElementById('btnHousingSec');
+            btnNew.className = `min-h-[64px] p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                isNew ? 'bg-champagne/15 border-champagne text-white' : 'bg-[#0d0d0c] border-white/[0.08] text-neutral-400'
+            }`;
+            btnSec.className = `min-h-[64px] p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                !isNew ? 'bg-champagne/15 border-champagne text-white' : 'bg-[#0d0d0c] border-white/[0.08] text-neutral-400'
+            }`;
+            document.getElementById('dotHousingNew').innerHTML = isNew ? '<span class="w-2 h-2 rounded-full bg-champagne"></span>' : '';
+            document.getElementById('dotHousingSec').innerHTML = !isNew ? '<span class="w-2 h-2 rounded-full bg-champagne"></span>' : '';
+            document.getElementById('housingImpactHint').textContent = isNew
+                ? 'Новостройка • слой ~15 мм'
+                : 'Вторичка • слой ~22 мм (+армирование)';
+
+            // Пресеты квартир
+            ['studio', '1k', '2k', '3k'].forEach(key => {
+                const el = document.getElementById(`preset-${key}`);
+                if (state.preset === key) {
+                    el.className = 'preset-btn min-h-[48px] rounded-xl border border-champagne bg-champagne/15 text-white text-xs font-bold flex flex-col items-center justify-center transition-all';
+                } else {
+                    el.className = 'preset-btn min-h-[48px] rounded-xl border border-white/[0.08] bg-[#0d0d0c] text-neutral-300 text-xs font-semibold flex flex-col items-center justify-center transition-all';
+                }
+            });
+
+            // Переключатели ГКЛ и Стяжки
+            const gklBtn = document.getElementById('toggleGklBtn');
+            const gklSub = document.getElementById('gklSubConfig');
+            gklBtn.className = `w-14 h-8 rounded-full p-1 transition-colors duration-200 flex items-center shrink-0 ${
+                state.useGkl ? 'bg-champagne justify-end' : 'bg-white/[0.12] justify-start'
+            }`;
+            gklSub.style.display = state.useGkl ? 'flex' : 'none';
+            document.getElementById('gklAreaValue').textContent = `${state.gklArea} м²`;
+
+            const screedBtn = document.getElementById('toggleScreedBtn');
+            const screedSub = document.getElementById('screedSubConfig');
+            screedBtn.className = `w-14 h-8 rounded-full p-1 transition-colors duration-200 flex items-center shrink-0 ${
+                state.useScreed ? 'bg-champagne justify-end' : 'bg-white/[0.12] justify-start'
+            }`;
+            screedSub.style.display = state.useScreed ? 'flex' : 'none';
+            document.getElementById('screedCmValue').textContent = `${state.screedCm} см`;
+
+            // 3. Экран 2: Запас +10% / +15%
+            const r10 = document.getElementById('btnReserve10');
+            const r15 = document.getElementById('btnReserve15');
+            r10.className = `min-h-[48px] px-3 py-2 rounded-xl text-left transition-all flex items-center justify-between ${
+                state.reservePercent === 10 ? 'bg-champagne text-[#0d0d0c]' : 'bg-transparent text-neutral-400'
+            }`;
+            r15.className = `min-h-[48px] px-3 py-2 rounded-xl text-left transition-all flex items-center justify-between ${
+                state.reservePercent === 15 ? 'bg-champagne text-[#0d0d0c]' : 'bg-transparent text-neutral-400'
+            }`;
+            document.getElementById('objectQuickDigest').textContent = `${state.area} м² • Стены ${geom.netWallArea} м²`;
+
+            renderCatalogScreen(items);
+
+            // 4. Экран 3: Корзина и тоннаж
+            document.getElementById('cartTotalRub').textContent = formatRub(totalRub);
+            const perSqm = Math.round(totalRub / Math.max(1, state.area));
+            document.getElementById('cartPerSqmRub').textContent = `~${perSqm.toLocaleString('ru-RU')} ₽ / м² пола`;
+            document.getElementById('cartTotalWeightTons').textContent = `${totalWeightTons.toFixed(2)} т`;
+            document.getElementById('cartTotalWeightKg').textContent = `${Math.round(totalWeightKg).toLocaleString('ru-RU')} кг • с запасом +${state.reservePercent}%`;
+            document.getElementById('activePositionsBadge').textContent = `${activePositions} поз.`;
+
+            let truckText = 'Доставка Петрович: Газель до 1.5 т';
+            if (totalWeightTons > 4.5) {
+                truckText = 'Доставка Петрович: Грузовик 10 т / Манипулятор';
+            } else if (totalWeightTons > 1.5) {
+                truckText = 'Доставка Петрович: Бортовой 5 т с разгрузкой';
+            }
+            document.getElementById('logisticsTruckHint').textContent = truckText;
+
+            renderCartScreen(items);
+
+            // 5. Экран 4: Вилка стоимости работ
+            const baseRatePerSqm = state.housingType === 'newbuild' ? 18900 : 21500;
+            document.getElementById('workRateFrom').textContent = baseRatePerSqm.toLocaleString('ru-RU');
+            document.getElementById('workObjectSummaryTag').textContent = `${state.area} м² • ${isNew ? 'Новостройка' : 'Вторичка'}`;
+            document.getElementById('leadCartTotalPreview').textContent = `${formatRub(totalRub)} / ${totalWeightTons.toFixed(2)} т`;
+
+            // Refresh Lucide icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // =========================================================================
+        // 9. НАВИГАЦИЯ МЕЖДУ ЭКРАНАМИ (1..4)
+        // =========================================================================
+        function switchScreen(screenIndex) {
+            triggerHaptic('light');
+            state.currentScreen = screenIndex;
+
+            for (let i = 1; i <= 4; i++) {
+                const section = document.getElementById(`screen-${i}`);
+                const topPill = document.getElementById(`topStep${i}`);
+                const navBtn = document.getElementById(`navBtn-${i}`);
+
+                if (i === screenIndex) {
+                    section.classList.remove('hidden');
+                    topPill.className = 'step-pill h-9 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-champagne text-[#0d0d0c] shadow-sm transition-all';
+                    navBtn.className = 'min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-bold text-champagne bg-champagne/10 border border-champagne/25 transition-all';
+                } else {
+                    section.classList.add('hidden');
+                    const isPassed = i < screenIndex;
+                    topPill.className = `step-pill h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 border transition-all ${
+                        isPassed
+                            ? 'bg-white/[0.04] border-champagne/30 text-champagne'
+                            : 'bg-[#171715] border-white/[0.06] text-neutral-400'
+                    }`;
+                    navBtn.className = 'min-h-[50px] rounded-xl flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-neutral-400 hover:text-white transition-all';
+                }
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // =========================================================================
+        // 10. ЭКСПОРТ В «ПЕТРОВИЧ» И БУФЕР ОБМЕНА (БЕЗ ALERT)
+        // =========================================================================
+        function copyTextToClipboard(text, successMsg) {
+            const tempArea = document.createElement('textarea');
+            tempArea.value = text;
+            tempArea.style.position = 'fixed';
+            tempArea.style.left = '-9999px';
+            document.body.appendChild(tempArea);
+            tempArea.focus();
+            tempArea.select();
+            try {
+                document.execCommand('copy');
+                triggerHaptic('success');
+                showToast(successMsg);
+            } catch (err) {
+                showToast('Не удалось скопировать автоматически');
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        function openPetrovichModal() {
+            triggerHaptic('medium');
+            const { items } = calculateAllItems();
+            const active = items.filter(i => i.effectiveQty > 0);
+
+            // Формат быстрого заказа по кодам СТД «Петрович»: Артикул - Количество
+            const codeLines = active.map(i => `${i.sku} - ${i.effectiveQty} // ${i.name} (${i.unitBadge})`);
+            document.getElementById('petrovichCodesTextarea').value = codeLines.join('\n');
+            document.getElementById('modalCodesCount').textContent = `${active.length} позиций`;
+
+            const modal = document.getElementById('petrovichModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePetrovichModal() {
+            triggerHaptic('light');
+            const modal = document.getElementById('petrovichModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyPetrovichCodesOnly() {
+            const { items } = calculateAllItems();
+            const active = items.filter(i => i.effectiveQty > 0);
+            const cleanCodes = active.map(i => `${i.sku} ${i.effectiveQty}`).join('\n');
+            copyTextToClipboard(cleanCodes, 'Коды для «Петровича» скопированы!');
+        }
+
+        function copyShoppingList() {
+            const { geom, items } = calculateAllItems();
+            const active = items.filter(i => i.effectiveQty > 0);
+            const totalRub = active.reduce((acc, i) => acc + i.linePrice, 0);
+            const totalWeightKg = active.reduce((acc, i) => acc + i.lineWeightKg, 0);
+
+            let report = `📋 ВЕДОМОСТЬ ЧЕРНОВЫХ МАТЕРИАЛОВ — «УМНЫЙ РЕМОНТ» (umniremont.pro)\n`;
+            report += `══════════════════════════════════════\n`;
+            report += `• Тип объекта: ${state.housingType === 'newbuild' ? 'Новостройка (бетон/монолит)' : 'Вторичка (старый фонд/кирпич)'}\n`;
+            report += `• Площадь пола: ${state.area} м² | Потолки: ${state.height} м | Стены: ${geom.netWallArea} м²\n`;
+            report += `• Технологический запас: +${state.reservePercent}%\n\n`;
+            report += `🛒 СПИСОК ПОКУПОК СТД «ПЕТРОВИЧ» (petrovich.ru):\n`;
+
+            active.forEach((item, idx) => {
+                report += `${idx + 1}. [Арт. ${item.sku}] ${item.name} (${item.unitBadge}) — ${item.effectiveQty} ${item.unitShort} × ${item.price} ₽ = ${formatRub(item.linePrice)}\n`;
+            });
+
+            report += `\n══════════════════════════════════════\n`;
+            report += `💰 ИТОГО МАТЕРИАЛЫ: ${formatRub(totalRub)}\n`;
+            report += `⚖️ ОБЩИЙ ВЕС ПАРТИИ: ${(totalWeightKg / 1000).toFixed(2)} т (${Math.round(totalWeightKg)} кг)\n`;
+            report += `🔗 Сформировано в ассистенте: https://umniremont.pro`;
+
+            copyTextToClipboard(report, 'Полная смета закупки скопирована в буфер!');
+        }
+
+        // =========================================================================
+        // 11. ОТПРАВКА ЗАЯВКИ ПРОРАБУ / ЗАМЕРЩИКУ (ЭКРАН 4)
+        // =========================================================================
+        function submitForemanRequest(event) {
+            event.preventDefault();
+            triggerHaptic('success');
+
+            const name = document.getElementById('leadName').value.trim();
+            const contact = document.getElementById('leadContact').value.trim();
+            const address = document.getElementById('leadAddress').value.trim() || 'Не указан';
+            const attachCart = document.getElementById('attachEstimateCheck').checked;
+
+            const { items } = calculateAllItems();
+            const active = items.filter(i => i.effectiveQty > 0);
+            const totalRub = active.reduce((acc, i) => acc + i.linePrice, 0);
+            const totalWeightTons = active.reduce((acc, i) => acc + i.lineWeightKg, 0) / 1000;
+
+            const payload = {
+                source: 'umniremont_tma_calculator',
+                client: { name, contact, address },
+                object: {
+                    housingType: state.housingType,
+                    area: state.area,
+                    height: state.height,
+                    perimeter: state.perimeter,
+                    reservePercent: state.reservePercent
+                },
+                petrovichCart: attachCart ? {
+                    totalRub,
+                    totalWeightTons: Number(totalWeightTons.toFixed(2)),
+                    items: active.map(i => ({ sku: i.sku, name: i.name, qty: i.effectiveQty, price: i.linePrice }))
+                } : null
+            };
+
+            // Если запущено внутри Telegram Mini App — отправляем данные боту при необходимости
+            if (tg?.sendData) {
+                try {
+                    // Send structured JSON to Telegram Bot backend if invoked via Keyboard Button
+                    // Wrapped in try/catch so inline mode also shows visual confirmation smoothly
+                    tg.sendData(JSON.stringify(payload));
+                } catch (e) {
+                    // Fallback to UI confirmation below
+                }
+            }
+
+            const successBox = document.getElementById('leadSuccessBox');
+            const successText = document.getElementById('leadSuccessText');
+            successBox.classList.remove('hidden');
+            successText.innerHTML = `Спасибо, <strong>${name}</strong>! Инженер-сметчик «Умного Ремонта» свяжется с вами по контакту <strong>${contact}</strong> в течение 10 минут для согласования бесплатного замера объекта (${state.area} м²). Ведомость материалов СТД «Петрович» на сумму <strong>${formatRub(totalRub)}</strong> прикреплена к заявке.`;
+
+            showToast('Заявка передана главному инженеру!');
+        }
+
+        let toastTimeout = null;
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('opacity-0', '-translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-3');
+            }, 2600);
+        }
+
+        // Initial Boot on Window Load
+        window.onload = function () {
+            // Prefill Telegram user name if available
+            const tgUser = tg?.initDataUnsafe?.user;
+            if (tgUser) {
+                const nameInput = document.getElementById('leadName');
+                const contactInput = document.getElementById('leadContact');
+                if (tgUser.first_name && nameInput) nameInput.value = tgUser.first_name;
+                if (tgUser.username && contactInput) contactInput.value = '@' + tgUser.username;
+            }
+
+            applyPreset('2k'); // Демо-квартира 54 м² по умолчанию
+            switchScreen(1);
+        };
+    </script>
+</body>
 </html>
